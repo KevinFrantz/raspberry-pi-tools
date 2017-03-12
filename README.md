@@ -1,2 +1,2 @@
 # raspberry-pi-tools
-Tools for Raspberrz pi
+Tools for Raspberry pi
