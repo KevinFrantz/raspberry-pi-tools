@@ -106,7 +106,7 @@ bsdtar -xpf $imagepath -C $rootpath
 sync
 
 echo "Die Boot-Dateien werden auf die SD-Karte aufgespielt..."
-mv $rootpath"/boot/"* $bootpath
+mv -v $rootpath"/boot/"* $bootpath
 
 echo "Script rauemt das Verzeichnis auf..."
 umount $rootpath $bootpath
