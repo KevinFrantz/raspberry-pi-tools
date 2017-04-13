@@ -43,8 +43,29 @@ while [ "$workingpath" == "" ]
 		fi
 
 done
+while [ "$imagepath" == "" ]
+	do
+		echo "Setzen Sie den Imagenamen(Standart:"$workingpath"ArchLinuxARM-rpi-2-latest.tar.gz)"
+		read image
+		if [ "$image" == "" ]
+			then 
+				imagepath=$workingpath"ArchLinuxARM-rpi-2-latest.tar.gz"
+			else
+				imagepath=$workingpath$image
+		fi
+		if [ \! -f "$imagepath" ]
+			then			
+				echo "Das ausgewaehlte Image existiert nicht!"
+				#Image ggf. downloaden
+				if [ \! -f "$imagepath" ]
+					then
+						echo "Image wird gedownloadet..."		
+						wget http://os.archlinuxarm.org/os/$image
+				fi
+		fi
+
+done
 echo "Die Arbeitsvariablen werden gesetzt..."
-imagepath=$workingpath"ArchLinuxARM-rpi-2-latest.tar.gz"
 bootpath=$workingpath"boot" 
 rootpath=$workingpath"root"
 if [ "${ofi:5:1}" != "s" ]
@@ -93,13 +114,6 @@ echo "Generiere und mounte root-Partition..."
 mkfs.ext4 $ofiroot
 mkdir $rootpath
 mount $ofiroot $rootpath
-
-#Image ggf. downloaden
-if [ \! -f "$imagepath" ]
-	then
-		echo "Image wird gedownloadet..."		
-		wget http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-2-latest.tar.gz
-fi
 
 echo "Die Root-Dateien werden auf die SD-Karte aufgespielt..."
 bsdtar -xpf $imagepath -C $rootpath
