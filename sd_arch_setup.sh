@@ -11,8 +11,8 @@ if [ `id -u` != 0 ];then
 fi
 echo "Liste der aktuell gemounteten Geraete:"
 echo 
-ls -lasi /dev/ | grep "sd"
-echo "(Die Liste zeigt nur Geraete an welche auf den Filter /dev/sd* passen)"
+ls -lasi /dev/ | grep -E "sd|mm"
+echo "(Die Liste zeigt nur Geraete an welche auf den Filter passen)"
 echo
 while [ \! -b "$ofi" ]
 	do
