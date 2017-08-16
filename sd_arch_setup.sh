@@ -60,7 +60,7 @@ while [ "$imagepath" == "" ]
 				if [ \! -f "$imagepath" ]
 					then
 						echo "Image wird gedownloadet..."		
-						wget http://os.archlinuxarm.org/os/$image
+						wget http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-2-latest.tar.gz
 				fi
 		fi
 
