@@ -65,9 +65,18 @@ while [ "$imagepath" == "" ]
 		fi
 
 done
+
+#Nutzer definieren
+echo "Geben Sie den Nutzer an, von welchem der SSH-Key kopiert werden soll:"
+read user;
+
 echo "Die Arbeitsvariablen werden gesetzt..."
 bootpath=$workingpath"boot" 
 rootpath=$workingpath"root"
+
+ssh_key_source="/home/$user/.ssh/id_rsa.pub"
+ssh_key_target="$rootpath/home/alarm/.ssh/authorized_keys"
+
 if [ "${ofi:5:1}" != "s" ]
 	then
 		partion="p"
@@ -83,6 +92,8 @@ echo "Imagepath: $imagepath"
 echo "SD-Karte: $ofi"
 echo "SD-Karte-Partition 1(boot): $ofiboot"
 echo "SD-Karte-Partition 2(root): $ofiroot"
+echo "SSH-Source-Path: $ssh_key_source"
+echo "SSH-Target-Path: $ssh_key_target"
 echo "Bestaetigen Sie mit der Enter-Taste. Zum Abbruch Ctrl + Alt + C druecken"
 read bestaetigung
 echo "fdisk wird ausgefuehrt..."
@@ -121,6 +132,15 @@ sync
 
 echo "Die Boot-Dateien werden auf die SD-Karte aufgespielt..."
 mv -v $rootpath"/boot/"* $bootpath
+
+if [ "$user" != "" ] && [ -f "$ssh_key_source" ]
+	then
+		echo "Der SSH-Key wird auf den Raspberry kopiert..."
+		mkdir -v "$rootpath/home/alarm/.ssh"				
+		cat "$ssh_key_source" > "$ssh_key_target"
+		chown -R 1000 "$rootpath/home/alarm/.ssh"
+		chmod -R 400 "$rootpath/home/alarm/.ssh"
+fi
 
 echo "Script rauemt das Verzeichnis auf..."
 umount $rootpath $bootpath
