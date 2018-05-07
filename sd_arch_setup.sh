@@ -149,6 +149,8 @@ if [ "$user" != "" ] && [ -f "$ssh_key_source" ]
 		cat "$ssh_key_source" > "$ssh_key_target"
 		chown -R 1000 "$rootpath/home/alarm/.ssh"
 		chmod -R 400 "$rootpath/home/alarm/.ssh"
+    echo "SSH File wird angelegt..."
+    echo "" > "$bootpath/ssh"
 fi
 
 echo "Script rauemt das Verzeichnis auf..."
