@@ -1,14 +1,17 @@
-# raspberry-pi-tools
-This repository contains administration tools for the Raspberry Pi.
+# Raspberry Pi sdc tools
+This repository contains some shell scripts to install Arch Linux for the Raspberry Pi on a SD-Card and to backup a SD-Card.
+## Use
+To install Arch Linux on a SD card type in:
 
-Like:
-* Backuptools
-* Setuptools
-* General Managementtools
+```bash
+  bash ./sd_card_setup.sh
+```
+To backup a SD card type in:
 
-For some of the tools you need to install Python.
+```bash
+  bash ./sd_backup.sh
+```
 
-If you want to enable a tool to be loaded at the start of a system, genereate a file like example.service in /etc/systemd/system/ and follow the instructions under https://linuxconfig.org/how-to-automatically-execute-shell-script-at-startup-boot-on-systemd-linux. 
+## License
 
-@author kf
-@since 2017-03-13
+<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
