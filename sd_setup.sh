@@ -10,7 +10,7 @@ echo
 echo "Starting setup..."
 
 echo "Define working folder..."
-working_folder="/tmp/raspberry-pi-tools-$(date +%s)";
+working_folder="/tmp/raspberry-pi-tools-$(date +%s)/";
 
 
 echo "Create temporary working folder in $working_folder";
@@ -142,8 +142,9 @@ root_partition_path=$sd_card_path$partion"2"
 
 mount_partitions(){
   echo "Mount boot and root partition..."
-  mount "$boot_partition_path" "$boot_mount_path"
-  mount "$root_partition_path" "$root_mount_path"
+  mount "$boot_partition_path" "$boot_mount_path" || (echo "Mount from $boot_partition_path to $boot_mount_path failed..." && exit 1)
+  mount "$root_partition_path" "$root_mount_path" || (echo "Mount from $root_partition_path to $root_mount_path failed..." && exit 1)
+  echo "The following mounts refering this setup exist:" && mount | grep "$working_folder"
 }
 
 echo "Copy data to sd-card..."
@@ -184,11 +185,15 @@ case "$os" in
 
     ;;
   "moode")
-    unzip -p "$image_path" | sudo dd of="$sd_card_path" bs=4M conv=fsync
+    unzip -p "$image_path" | sudo dd of="$sd_card_path" bs=4M conv=fsync || (echo "Copy failed. Aborted." && exit 1)
+    sync
+
     mount_partitions;
     ;;
   "retropie")
     gunzip -c "$image_path" | sudo dd of="$sd_card_path" bs=4M conv=fsync
+    sync
+
     mount_partitions;
     ;;
   *)
@@ -209,19 +214,21 @@ if [ -f "$origin_user_rsa_pub" ]
   then
     mkdir -v "$target_user_ssh_folder_path"
     cat "$origin_user_rsa_pub" > "$target_authorized_keys"
-    chown -R 1000 "$target_user_ssh_folder_path"
-    chmod -R 400 "$target_user_ssh_folder_path"
+    target_authorized_keys_content=$(cat "$target_authorized_keys")
+    echo "$target_authorized_keys contains the following: $target_authorized_keys_content"
+    chown -vR 1000 "$target_user_ssh_folder_path"
+    chmod -vR 400 "$target_user_ssh_folder_path"
   else
     echo "The ssh key \"$origin_user_rsa_pub\" can't be copied to \"$target_authorized_keys\" because it doesn't exist."
 fi
 
 echo "Change password of user \"$target_username\"..."
-chroot "$root_mount_path" "passwd $target_username"
+chroot "$root_mount_path" /bin/passwd "$target_username"
 
 echo "Change password of root user..."
-chroot "$root_mount_path" "passwd root"
+chroot "$root_mount_path" /bin/passwd root
 
-echo "Do you want to copy all Wifi passwords to the sd?(y/n)"
+echo "Do you want to copy all Wifi passwords to the sd-card?(y/n)"
 read -r copy_wifi
 if [ "$copy_wifi" = "y" ]
   then
@@ -229,7 +236,8 @@ if [ "$copy_wifi" = "y" ]
     target_wifi_config_path="$root_mount_path$origin_wifi_config_path"
     rsync -av "$origin_wifi_config_path" "$target_wifi_config_path"
 fi
-
+echo "The first level folder structure on $root_mount_path is now:" && tree -laL 1 "$root_mount_path"
+echo "The first level folder structure on $boot_mount_path is now:" && tree -laL 1 "$boot_mount_path"
 echo "Cleaning up..."
 umount -v "$root_mount_path" "$boot_mount_path"
 rm -vr "$working_folder"
