@@ -135,7 +135,7 @@ if [[ -v image_checksum ]]
   else
     echo "WARNING: Verification is not possible. No checksum is define."
 fi
-exit
+
 echo "Preparing mount paths..."
 boot_mount_path="$working_folder""boot"
 root_mount_path="$working_folder""root"
@@ -251,6 +251,7 @@ fi
 echo "The first level folder structure on $root_mount_path is now:" && tree -laL 1 "$root_mount_path"
 echo "The first level folder structure on $boot_mount_path is now:" && tree -laL 1 "$boot_mount_path"
 echo "Cleaning up..."
+
 umount -v "$root_mount_path" "$boot_mount_path"
 rm -vr "$working_folder"
 echo "Setup successfull :)" && exit 0
