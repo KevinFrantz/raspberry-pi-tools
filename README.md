@@ -1,5 +1,11 @@
 # Raspberry Pi sdc tools
 This repository contains some shell scripts to install Arch Linux for the Raspberry Pi on a SD-Card and to backup a SD-Card.
+## Todo
+
+- Implement hostname setting
+- Implement password change
+- Implement ssh configuration
+- Implement wifi automation
 
 ## Setup
 ### SD-Card
@@ -28,6 +34,10 @@ To pase the configuration to the program use this syntax:
 ```bash
   pacman-key --init
   pacman-key --populate archlinuxarm
+  install -m640 /etc/netctl/examples/wireless-wpa domo-de-kosmopolitoj-wpa
+  nano domo-de-kosmopolitoj-wpa
+  netctl start domo-de-kosmopolitoj-wpa
+  netctl enable domo-de-kosmopolitoj-wpa
 ```
 #### Ubuntu\\Debian
 ```bash
