@@ -15,15 +15,16 @@ echo
 echo "@author Kevin Veen-Birkenbach [kevin@veen.world]"
 echo "@since 2017-03-12"
 echo
-echo "The images will be stored in /home/\$username/images/."
+echo ""
 echo "Create temporary working folder in $working_folder";
-mkdir
-if [ $(id -u) != 0 ];then
+mkdir -v "$working_folder"
+if [ "$(id -u)" != "0" ];then
     echo "This script must be executed as root!" && exit 1
 fi
 echo "Please type in the username from which the SSH-Key should be copied:" #@todo remove
 read -r username;
 image_folder="/home/$username/Images/";
+echo "The images will be stored in /home/\$username/images/."
 echo "List of actual mounted devices:"
 echo
 ls -lasi /dev/ | grep -E "sd|mm"
@@ -59,7 +60,7 @@ case "$os" in
         imagename="ArchLinuxARM-rpi-4-latest.tar.gz"
         ;;
       *)
-        os_does_not_support_raspberry_version_error $os $version
+        os_does_not_support_raspberry_version_error "$os" "$version"
         ;;
     esac
     ;;
@@ -82,7 +83,7 @@ case "$os" in
         imagename="retropie-buster-4.6-rpi4.img.gz"
         ;;
       *)
-        os_does_not_support_raspberry_version_error $os $version
+        os_does_not_support_raspberry_version_error "$os" "$version"
         ;;
     esac
     ;;
@@ -98,13 +99,13 @@ if [ \! -f "$imagepath" ]
 		if [ \! -f "$imagepath" ]
 			then
 				echo "Image \"$imagename\" gets downloaded from \"$download_url\""
-				wget $download_url
+				wget "$download_url"
 		fi
 fi
 case "$os" in
   "arch")
-    bootpath=$workingpath"boot"
-    rootpath=$workingpath"root"
+    bootpath="$workingpath""boot"
+    rootpath="$workingpath""root"
     ssh_key_source="/home/$username/.ssh/id_rsa.pub"
     ssh_key_target="$rootpath/home/$username/.ssh/authorized_keys"
 
@@ -137,13 +138,13 @@ case "$os" in
     #Bootpartion formatieren und mounten
     echo "Generate and mount boot-partition..."
     mkfs.vfat "$ofiboot"
-    mkdir "$bootpath"
+    mkdir -v "$bootpath"
     mount "$ofiboot" "$bootpath"
 
     #Rootpartition formatieren und mounten
     echo "Generate and mount root-partition..."
     mkfs.ext4 "$ofiroot"
-    mkdir "$rootpath"
+    mkdir -v "$rootpath"
     mount "$ofiroot" "$rootpath"
 
     echo "Die Root-Dateien werden auf die SD-Karte aufgespielt..."
@@ -151,7 +152,7 @@ case "$os" in
     sync
 
     echo "Die Boot-Dateien werden auf die SD-Karte aufgespielt..."
-    mv -v $rootpath"/boot/"* "$bootpath"
+    mv -v "$rootpath/boot/"* "$bootpath"
 
     if [ "$username" != "" ] && [ -f "$ssh_key_source" ]
     	then
@@ -166,9 +167,12 @@ case "$os" in
 
     echo "Unmount partitions..."
     umount -v "$rootpath" "$bootpath"
-
+    ;;
+  "retropie")
+    unzip -p "$imagepath" | sudo dd of="$of_device" bs=4M conv=fsync
+    ;;
   *)
-  echo "The operation system \"$os\" is not supported yet!" && exit 1;
-;;
+    echo "The operation system \"$os\" is not supported yet!" && exit 1;
+    ;;
 esac
 rm -r "$working_folder"
