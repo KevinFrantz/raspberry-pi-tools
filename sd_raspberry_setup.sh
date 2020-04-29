@@ -5,13 +5,13 @@ echo "@author Kevin Veen-Birkenbach [kevin@veen.world]"
 echo "@since 2017-03-12"
 echo
 echo "The images will be stored in /home/\$username/images/."
-tmp_folder="/tmp/raspberry-pi-tools-$(date +%s)";
-echo "Create temporary working folder in $tmp_folder";
+working_folder="/tmp/raspberry-pi-tools-$(date +%s)";
+echo "Create temporary working folder in $working_folder";
 if [ $(id -u) != 0 ];then
     echo "This script must be executed as root!" && exit 1
 fi
 echo "Please type in the username from which the SSH-Key should be copied:"
-read username;
+read -r username;
 image_folder="/home/$username/images/";
 echo "List of actual mounted devices:"
 echo
@@ -21,39 +21,18 @@ while [ \! -b "$ofi" ]
 	do
 		echo "Please select the correct SD-Card."
 		echo "/dev/:"
-		read device
+		read -r device
 		ofi="/dev/$device"
 done
-while [ "$workingpath" == "" ]
-	do
-		echo "Bitte waehlen Sie den Arbeitspfad zu $(pwd) aus:"
-		read workingpath
-		if [ "${workingpath:0:1}" != "/" ]
-			then
-				workingpath=$(pwd)"/"$workingpath
-		fi
-		if [ -d "$workingpath" ]
-			then
-				i=$((${#workingpath}-1)) #Letzte Zeichenstelle ermitteln
-				if [ "${workingpath:$i:1}" != "/" ]
-					then
-						workingpath=$workingpath"/"
-				fi
-			else
-				echo "Der ausgewaehlte Arbeitspfad existiert nicht."
-				workingpath=""
-		fi
-
-done
 echo "Which raspberry pi version do you want to use?"
-read version
+read -r version
 echo "Image for RaspberryPi $version will be used..."
 echo "Which OS do you want to use?"
 echo "1) arch"
 echo "2) moode"
 echo "3) retropie"
 echo "Please type in the os:"
-read os
+read -r os
 case "$os" in
   "arch")
     base_download_url="http://os.archlinuxarm.org/os/";
@@ -71,11 +50,10 @@ case "$os" in
         echo "ArchLinux for RaspberryPi Version $version is not supported!" && exit 1;
         ;;
     esac
-    downloadurl="http://os.archlinuxarm.org/os/$imagename"
     ;;
   "moode")
+    base_download_url="https://github.com/moode-player/moode/releases/download/r651prod/"
     imagename="moode-r651-iso.zip";
-    downloadurl="https://github.com/moode-player/moode/releases/download/r651prod/moode-r651-iso.zip";
     ;;
   "retropie")
     base_download_url="https://github.com/RetroPie/RetroPie-Setup/releases/download/4.6/";
@@ -95,40 +73,27 @@ case "$os" in
         echo "RetroPie for RaspberryPi Version $version is not supported!" && exit 1;
         ;;
     esac
-    downloadurl="$base_download_url$imagename"
     ;;
   *)
     echo "The operation system \"$os\" is not supported yet!" && exit 1;
   ;;
-  esac
-while [ "$imagepath" == "" ]
-	do
-		echo "Setzen Sie den Imagenamen(Standart:$workingpath$imagename)"
-		read image
-		if [ "$image" == "" ]
-			then
-				imagepath=$workingpath$imagename
-			else
-				imagepath=$workingpath$image
-		fi
+esac
+download_url="$base_download_url$imagename"
+$imagepath="$image_folder"
+if [ \! -f "$imagepath" ]
+	then
+		echo "The selected image doesn't exist yet local."
 		if [ \! -f "$imagepath" ]
 			then
-				echo "Das ausgewaehlte Image existiert nicht!"
-				#Image ggf. downloaden
-				if [ \! -f "$imagepath" ]
-					then
-						echo "Image wird gedownloadet..."
-						wget $downloadurl
-				fi
+				echo "Image gets downloaded..."
+				wget $download_url
 		fi
-
-done
-
+fi
 echo "Die Arbeitsvariablen werden gesetzt..."
 bootpath=$workingpath"boot"
 rootpath=$workingpath"root"
 
-ssh_key_source="/home/$user/.ssh/id_rsa.pub"
+ssh_key_source="/home/$username/.ssh/id_rsa.pub"
 ssh_key_target="$rootpath/home/alarm/.ssh/authorized_keys"
 
 if [ "${ofi:5:1}" != "s" ]
@@ -149,7 +114,7 @@ echo "SD-Karte-Partition 2(root): $ofiroot"
 echo "SSH-Source-Path: $ssh_key_source"
 echo "SSH-Target-Path: $ssh_key_target"
 echo "Bestaetigen Sie mit der Enter-Taste. Zum Abbruch Ctrl + Alt + C druecken"
-read bestaetigung
+read -r bestaetigung
 echo "fdisk wird ausgefuehrt..."
 (	echo "o"	#Type o. This will clear out any partitions on the drive.
 	echo "p"	#Type p to list partitions. There should be no partitions left
@@ -187,7 +152,7 @@ sync
 echo "Die Boot-Dateien werden auf die SD-Karte aufgespielt..."
 mv -v $rootpath"/boot/"* "$bootpath"
 
-if [ "$user" != "" ] && [ -f "$ssh_key_source" ]
+if [ "$username" != "" ] && [ -f "$ssh_key_source" ]
 	then
 		echo "Der SSH-Key wird auf den Raspberry kopiert..."
 		mkdir -v "$rootpath/home/alarm/.ssh"
