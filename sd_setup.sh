@@ -47,25 +47,23 @@ while [ ! -b "$sd_card_path" ]
 		sd_card_path="/dev/$device"
 done
 
-# Select Raspberry Pi
-echo "Which Raspberry Pi version do you want to use?"
+echo "Select which Raspberry Pi version should be used"
 read -r version
 
-# Select Image
-
-os_does_not_support_raspberry_version_error () {
-  echo "$1 for Raspberry Pi Version $2 is not supported!" && exit 1;
-}
-
-echo "Image for Raspberry Pi $version will be used..."
+echo "Select which operation system should be used..."
 echo
-echo "Which OS do you want to use?"
 echo "1) arch"
 echo "2) moode"
 echo "3) retropie"
 echo
 echo "Please type in the os:"
 read -r os
+
+
+os_does_not_support_raspberry_version_error () {
+  echo "$1 for Raspberry Pi Version $2 is not supported!" && exit 1;
+}
+
 case "$os" in
   "arch")
     base_download_url="http://os.archlinuxarm.org/os/";
@@ -112,7 +110,7 @@ case "$os" in
   ;;
 esac
 
-# Download Image
+echo "Download os-image..."
 download_url="$base_download_url$imagename"
 image_path="$image_folder$image_path"
 
@@ -121,18 +119,18 @@ if [ ! -f "$image_path" ]
 		echo "The selected image \"$imagename\" doesn't exist under local path \"$image_path\"."
 		if [ ! -f "$image_path" ]
 			then
-				echo "Image \"$imagename\" gets downloaded from \"$download_url\""
+				echo "Image \"$imagename\" gets downloaded from \"$download_url\"..."
 				wget "$download_url"
 		fi
 fi
 
-# Prepare mount paths
+echo "Preparing mount paths..."
 boot_mount_path="$working_folder""boot"
 root_mount_path="$working_folder""root"
 mkdir -v "$boot_mount_path"
 mkdir -v "$root_mount_path"
 
-# Define partition paths
+echo "Defining partition paths..."
 if [ "${sd_card_path:5:1}" != "s" ]
   then
     partion="p"
@@ -148,10 +146,10 @@ mount_partitions(){
   mount "$root_partition_path" "$root_mount_path"
 }
 
-# Copy
+echo "Copy data to sd-card..."
 case "$os" in
   "arch")
-    echo "fdisk wird ausgefuehrt..."
+    echo "fdisk is executedman fd"
     (	echo "o"	#Type o. This will clear out any partitions on the drive.
     	echo "p"	#Type p to list partitions. There should be no partitions left
     	echo "n"	#Type n,
@@ -215,6 +213,21 @@ if [ -f "$origin_user_rsa_pub" ]
     chmod -R 400 "$target_user_ssh_folder_path"
   else
     echo "The ssh key \"$origin_user_rsa_pub\" can't be copied to \"$target_authorized_keys\" because it doesn't exist."
+fi
+
+echo "Change password of user \"$target_username\"..."
+chroot "$root_mount_path" "passwd $target_username"
+
+echo "Change password of root user..."
+chroot "$root_mount_path" "passwd root"
+
+echo "Do you want to copy all Wifi passwords to the sd?(y/n)"
+read -r copy_wifi
+if [ "$copy_wifi" = "y" ]
+  then
+    origin_wifi_config_path="/etc/NetworkManager/system-connections/"
+    target_wifi_config_path="$root_mount_path$origin_wifi_config_path"
+    rsync -av "$origin_wifi_config_path" "$target_wifi_config_path"
 fi
 
 echo "Cleaning up..."
