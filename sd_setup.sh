@@ -24,13 +24,13 @@ fi
 echo "Configure user..."
 echo "Please type in a valid username from which the SSH-Key should be copied:"
 read -r origin_username;
-getent passwd "$origin_username" > /dev/null 2 || echo "User $origin_username doesn't exist. Abord program." && exit 1;
+getent passwd "$origin_username" > /dev/null 2 || (echo "User $origin_username doesn't exist. Abord program." && exit 1);
 origin_user_home="/home/$origin_username/";
 
 echo "Image routine starts..."
-image_folder="$origin_user_home/Images/";
+image_folder="$origin_user_home""Images/";
 echo "The images will be stored in \"$image_folder\"."
-if [ ! -d "$DIR" ]; then
+if [ ! -d "$image_folder" ]; then
   echo "Folder \"$image_folder\" doesn't exist. It will be created now."
   mkdir -v "$image_folder"
 fi
@@ -120,7 +120,7 @@ if [ ! -f "$image_path" ]
 		if [ ! -f "$image_path" ]
 			then
 				echo "Image \"$imagename\" gets downloaded from \"$download_url\"..."
-				wget "$download_url"
+				wget "$download_url" -P "$image_folder"
 		fi
 fi
 
