@@ -15,16 +15,20 @@ echo
 echo "@author Kevin Veen-Birkenbach [kevin@veen.world]"
 echo "@since 2017-03-12"
 echo
-echo ""
+echo
 echo "Create temporary working folder in $working_folder";
 mkdir -v "$working_folder"
 if [ "$(id -u)" != "0" ];then
     echo "This script must be executed as root!" && exit 1
 fi
-echo "Please type in the username from which the SSH-Key should be copied:" #@todo remove
+echo "Please type in a valid username from which the SSH-Key should be copied:"
 read -r username;
 image_folder="/home/$username/Images/";
-echo "The images will be stored in /home/\$username/images/."
+echo "The images will be stored in \"$image_folder\"."
+if [ ! -d "$DIR" ]; then
+  echo "Folder \"$image_folder\" doesn't exist. It will be created now."
+  mkdir -v "$image_folder"
+fi
 echo "List of actual mounted devices:"
 echo
 ls -lasi /dev/ | grep -E "sd|mm"
@@ -156,13 +160,11 @@ case "$os" in
 
     if [ "$username" != "" ] && [ -f "$ssh_key_source" ]
     	then
-    		echo "SSH key will be copied to raspberryPi.."
+    		echo "SSH key will be copied to Raspberry Pi.."
     		mkdir -v "$rootpath/home/$os_username/.ssh"
     		cat "$ssh_key_source" > "$ssh_key_target"
     		chown -R 1000 "$rootpath/home/$os_username/.ssh"
     		chmod -R 400 "$rootpath/home/$os_username/.ssh"
-        #echo "SSH file will be generated..."
-        #echo "" > "$bootpath/ssh" # Why does this generation exist? Remove if possible
     fi
 
     echo "Unmount partitions..."
