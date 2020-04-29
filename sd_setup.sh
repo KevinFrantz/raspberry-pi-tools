@@ -61,7 +61,7 @@ read -r os
 
 
 os_does_not_support_raspberry_version_error () {
-  echo "$1 for Raspberry Pi Version $2 is not supported!" && exit 1;
+  echo "$os for Raspberry Pi Version $version is not supported!" && exit 1;
 }
 
 case "$os" in
@@ -78,7 +78,7 @@ case "$os" in
         imagename="ArchLinuxARM-rpi-4-latest.tar.gz"
         ;;
       *)
-        os_does_not_support_raspberry_version_error "$os" "$version"
+        os_does_not_support_raspberry_version_error
         ;;
     esac
     ;;
@@ -105,7 +105,7 @@ case "$os" in
         imagename="retropie-buster-4.6-rpi4.img.gz"
         ;;
       *)
-        os_does_not_support_raspberry_version_error "$os" "$version"
+        os_does_not_support_raspberry_version_error
         ;;
     esac
     ;;
@@ -159,7 +159,7 @@ mount_partitions(){
   echo "The following mounts refering this setup exist:" && mount | grep "$working_folder"
 }
 
-echo "Copy data to sd-card..."
+echo "Copy data to $sd_card_path..."
 case "$os" in
   "arch")
     echo "fdisk is executedman fd"
@@ -209,7 +209,7 @@ case "$os" in
     mount_partitions;
     ;;
   *)
-    echo "The operation system \"$os\" is not supported yet!" && exit 1;
+    echo "Image transfer for operation system \"$os\" is not supported yet!" && exit 1;
     ;;
 esac
 
