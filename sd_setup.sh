@@ -168,8 +168,11 @@ case "$os" in
     echo "Unmount partitions..."
     umount -v "$rootpath" "$bootpath"
     ;;
-  "retropie")
+  "moode")
     unzip -p "$imagepath" | sudo dd of="$of_device" bs=4M conv=fsync
+    ;;
+  "retropie")
+    gunzip -c "$imagepath" | sudo dd of="$of_device" bs=4M conv=fsync
     ;;
   *)
     echo "The operation system \"$os\" is not supported yet!" && exit 1;
