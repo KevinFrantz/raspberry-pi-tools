@@ -9,22 +9,26 @@ echo
 
 echo "Starting setup..."
 
-echo "Define working folder..."
+echo "Define variables..."
 working_folder="/tmp/raspberry-pi-tools-$(date +%s)/";
 
+echo "Define functions..."
+error(){
+  echo "ERROR: $1. Leaving program." && exit 1;
+}
 
 echo "Create temporary working folder in $working_folder";
 mkdir -v "$working_folder"
 
 echo "Checking if root..."
 if [ "$(id -u)" != "0" ];then
-    echo "This script must be executed as root!" && exit 1
+    error "This script must be executed as root!"
 fi
 
 echo "Configure user..."
 echo "Please type in a valid username from which the SSH-Key should be copied:"
 read -r origin_username;
-getent passwd "$origin_username" > /dev/null 2 || (echo "User $origin_username doesn't exist. Abord program." && exit 1);
+getent passwd "$origin_username" > /dev/null 2 || error "User $origin_username doesn't exist.";
 origin_user_home="/home/$origin_username/";
 
 echo "Image routine starts..."
@@ -61,7 +65,7 @@ read -r os
 
 
 os_does_not_support_raspberry_version_error () {
-  echo "$os for Raspberry Pi Version $version is not supported!" && exit 1;
+  error "$os for Raspberry Pi Version $version is not supported!";
 }
 
 case "$os" in
@@ -110,7 +114,7 @@ case "$os" in
     esac
     ;;
   *)
-    echo "The operation system \"$os\" is not supported yet!" && exit 1;
+    error "The operation system \"$os\" is not supported yet!"
   ;;
 esac
 
@@ -124,14 +128,14 @@ if [ ! -f "$image_path" ]
 		if [ ! -f "$image_path" ]
 			then
 				echo "Image \"$imagename\" gets downloaded from \"$download_url\"..."
-				wget "$download_url" -P "$image_folder" || (echo "Download failed. Program aborted." && exit 1)
+				wget "$download_url" -P "$image_folder" || error "Download failed."
 		fi
 fi
 
 echo "Verifying image..."
 if [[ -v image_checksum ]]
   then
-    echo "$image_checksum $image_path"| md5sum -c -|| (echo "Verification failed. Program aborted." && exit 1)
+    echo "$image_checksum $image_path"| md5sum -c -|| error "Verification failed."
   else
     echo "WARNING: Verification is not possible. No checksum is define."
 fi
@@ -154,15 +158,16 @@ root_partition_path=$sd_card_path$partion"2"
 
 mount_partitions(){
   echo "Mount boot and root partition..."
-  mount "$boot_partition_path" "$boot_mount_path" || (echo "Mount from $boot_partition_path to $boot_mount_path failed..." && exit 1)
-  mount "$root_partition_path" "$root_mount_path" || (echo "Mount from $root_partition_path to $root_mount_path failed..." && exit 1)
+  mount "$boot_partition_path" "$boot_mount_path" || error "Mount from $boot_partition_path to $boot_mount_path failed..."
+  mount "$root_partition_path" "$root_mount_path" || error "Mount from $root_partition_path to $root_mount_path failed..."
   echo "The following mounts refering this setup exist:" && mount | grep "$working_folder"
 }
 
 echo "Copy data to $sd_card_path..."
+
 case "$os" in
   "arch")
-    echo "fdisk is executedman fd"
+    echo "Execute fdisk..."
     (	echo "o"	#Type o. This will clear out any partitions on the drive.
     	echo "p"	#Type p to list partitions. There should be no partitions left
     	echo "n"	#Type n,
@@ -178,13 +183,13 @@ case "$os" in
     	echo ""		#and then press ENTER twice to accept the default first and last sector.
     	echo ""
     	echo "w"	#Write the partition table and exit by typing w.
-    )| fdisk "$sd_card_path"
+    )| fdisk "$sd_card_path" || error "Creating partitions failed."
 
     echo "Format boot partition..."
-    mkfs.vfat "$boot_partition_path"
+    mkfs.vfat "$boot_partition_path" || error "Format boot is not possible."
 
     echo "Format root partition..."
-    mkfs.ext4 "$root_partition_path"
+    mkfs.ext4 "$root_partition_path" || error "Format root is not possible."
 
     mount_partitions;
 
@@ -197,7 +202,7 @@ case "$os" in
 
     ;;
   "moode")
-    unzip -p "$image_path" | sudo dd of="$sd_card_path" bs=4M conv=fsync || (echo "Copy failed. Aborted." && exit 1)
+    unzip -p "$image_path" | sudo dd of="$sd_card_path" bs=4M conv=fsync || error "DD to $sd_card_path failed."
     sync
 
     mount_partitions;
@@ -209,7 +214,7 @@ case "$os" in
     mount_partitions;
     ;;
   *)
-    echo "Image transfer for operation system \"$os\" is not supported yet!" && exit 1;
+    error "Image transfer for operation system \"$os\" is not supported yet!";
     ;;
 esac
 
@@ -250,8 +255,8 @@ if [ "$copy_wifi" = "y" ]
 fi
 echo "The first level folder structure on $root_mount_path is now:" && tree -laL 1 "$root_mount_path"
 echo "The first level folder structure on $boot_mount_path is now:" && tree -laL 1 "$boot_mount_path"
-echo "Cleaning up..."
 
-umount -v "$root_mount_path" "$boot_mount_path"
+echo "Cleaning up..."
+umount -v "$root_mount_path" "$boot_mount_path" || error "Umounting $root_mount_path and/or $boot_mount_path failed!."
 rm -vr "$working_folder"
 echo "Setup successfull :)" && exit 0

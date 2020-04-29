@@ -14,8 +14,8 @@ To pase the configuration to the program use this syntax:
 (
   echo "$USER"    #The username
   echo "mmcblk1"  #The device
-  echo "5"        #The raspberry pi number
-  echo "retropie" #The operation system
+  echo "3"        #The raspberry pi number
+  echo "arch"     #The operation system
 )| sudo bash ./sd_setup.sh
 ```
 ## Backup
