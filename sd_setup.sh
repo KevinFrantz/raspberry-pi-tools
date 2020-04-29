@@ -1,8 +1,5 @@
 #!/bin/bash
-# @todo execute as non
-
-# Define constants & variables
-working_folder="/tmp/raspberry-pi-tools-$(date +%s)"; #Working folder
+# shellcheck disable=SC2010  # ls  | grep allowed
 
 echo "Setupscript for Raspberry Pi SD's"
 echo
@@ -11,6 +8,10 @@ echo "@since 2017-03-12"
 echo
 
 echo "Starting setup..."
+
+echo "Define working folder..."
+working_folder="/tmp/raspberry-pi-tools-$(date +%s)"; #Working folder
+
 
 echo "Create temporary working folder in $working_folder";
 mkdir -v "$working_folder"
@@ -23,8 +24,8 @@ fi
 echo "Configure user..."
 echo "Please type in a valid username from which the SSH-Key should be copied:"
 read -r origin_username;
-getent passwd $origin_username > /dev/null 2 && echo "User $origin_username doesn't exist. Abord program." && exit 1;
-origin_user_home="/home/$username/";
+getent passwd "$origin_username" > /dev/null 2 && echo "User $origin_username doesn't exist. Abord program." && exit 1;
+origin_user_home="/home/$origin_username/";
 
 # Create image folders
 image_folder="$origin_user_home/Images/";
@@ -38,7 +39,7 @@ echo "Select sd-card..."
 echo "List of actual mounted devices:"
 ls -lasi /dev/ | grep -E "sd|mm"
 echo
-while [ \! -b "$sd_card_path" ]
+while [ ! -b "$sd_card_path" ]
 	do
 		echo "Please type in the name of the correct sd-card."
 		echo "/dev/:"
@@ -115,10 +116,10 @@ esac
 download_url="$base_download_url$imagename"
 image_path="$image_folder$image_path"
 
-if [ \! -f "$image_path" ]
+if [ ! -f "$image_path" ]
 	then
 		echo "The selected image \"$imagename\" doesn't exist under local path \"$image_path\"."
-		if [ \! -f "$image_path" ]
+		if [ ! -f "$image_path" ]
 			then
 				echo "Image \"$imagename\" gets downloaded from \"$download_url\""
 				wget "$download_url"
@@ -199,7 +200,7 @@ esac
 
 echo "Define target paths..."
 target_home_path="$root_mount_path/home/";
-target_username=$(ls $target_home_path);
+target_username=$(ls "$target_home_path");
 target_user_home_folder_path="$target_home_path$target_username/";
 
 echo "Copy ssh key to target..."

@@ -4,7 +4,7 @@ This repository contains some shell scripts to install Arch Linux for the Raspbe
 To install Arch Linux on a SD card type in:
 
 ```bash
-  bash ./sd_card_setup.sh
+  bash ./sd_setup.sh
 ```
 To backup a SD card type in:
 
