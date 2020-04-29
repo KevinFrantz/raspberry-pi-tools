@@ -1,27 +1,29 @@
 #!/bin/bash
-echo "Setupscript fuer Raspberry Pi SD's"
-echo "Dieses Script  muss aus dem Ordner aufgerufen werden, in welchem ArchLinuxARM-rpi-2-latest.tar.gz liegt"
+echo "Setupscript for Raspberry Pi SD's"
 echo
-echo "@author KevinFrantz"
+echo "@author Kevin Veen-Birkenbach [kevin@veen.world]"
 echo "@since 2017-03-12"
 echo
-if [ `id -u` != 0 ];then
-    echo "Das Script muss als Root aufgerufen werden!"
-    exit 1
+echo "The images will be stored in /home/\$username/images/."
+tmp_folder="/tmp/raspberry-pi-tools-$(date +%s)";
+echo "Create temporary working folder in $tmp_folder";
+if [ $(id -u) != 0 ];then
+    echo "This script must be executed as root!" && exit 1
 fi
-echo "Liste der aktuell gemounteten Geraete:"
+echo "Please type in the username from which the SSH-Key should be copied:"
+read username;
+image_folder="/home/$username/images/";
+echo "List of actual mounted devices:"
 echo
 ls -lasi /dev/ | grep -E "sd|mm"
-echo "(Die Liste zeigt nur Geraete an welche auf den Filter passen)"
 echo
 while [ \! -b "$ofi" ]
 	do
-		echo "Bitte waehlen Sie die korrekte SD-Karte aus:"
+		echo "Please select the correct SD-Card."
 		echo "/dev/:"
 		read device
 		ofi="/dev/$device"
 done
-#Pruefen ob der Pfad existiert hinzufuegen
 while [ "$workingpath" == "" ]
 	do
 		echo "Bitte waehlen Sie den Arbeitspfad zu $(pwd) aus:"
@@ -43,15 +45,62 @@ while [ "$workingpath" == "" ]
 		fi
 
 done
-echo "Bitte geben Sie ein, für welchen Raspberry das Image aufgespielt werden soll:"
+echo "Which raspberry pi version do you want to use?"
 read version
-if [ "$version" == "" ]
-  then
-    version="3"
-fi
-echo "Image für RaspberryPi $version wird verwendet..."
-imagename="ArchLinuxARM-rpi-$version-latest.tar.gz"
-downloadurl="http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-$version-latest.tar.gz"
+echo "Image for RaspberryPi $version will be used..."
+echo "Which OS do you want to use?"
+echo "1) arch"
+echo "2) moode"
+echo "3) retropie"
+echo "Please type in the os:"
+read os
+case "$os" in
+  "arch")
+    base_download_url="http://os.archlinuxarm.org/os/";
+    case "$version" in
+      "1")
+        imagename="ArchLinuxARM-rpi-latest.tar.gz"
+        ;;
+      "2" | "3")
+        imagename="ArchLinuxARM-rpi-2-latest.tar.gz"
+        ;;
+      "4")
+        imagename="ArchLinuxARM-rpi-4-latest.tar.gz"
+        ;;
+      *)
+        echo "ArchLinux for RaspberryPi Version $version is not supported!" && exit 1;
+        ;;
+    esac
+    downloadurl="http://os.archlinuxarm.org/os/$imagename"
+    ;;
+  "moode")
+    imagename="moode-r651-iso.zip";
+    downloadurl="https://github.com/moode-player/moode/releases/download/r651prod/moode-r651-iso.zip";
+    ;;
+  "retropie")
+    base_download_url="https://github.com/RetroPie/RetroPie-Setup/releases/download/4.6/";
+    case "$version" in
+      "1")
+        imagename="retropie-buster-4.6-rpi1_zero.img.gz"
+        ;;
+
+      "2" | "3")
+        imagename="retropie-buster-4.6-rpi2_rpi3.img.gz"
+        ;;
+
+      "4")
+        imagename="retropie-buster-4.6-rpi4.img.gz"
+        ;;
+      *)
+        echo "RetroPie for RaspberryPi Version $version is not supported!" && exit 1;
+        ;;
+    esac
+    downloadurl="$base_download_url$imagename"
+    ;;
+  *)
+    echo "The operation system \"$os\" is not supported yet!" && exit 1;
+  ;;
+  esac
 while [ "$imagepath" == "" ]
 	do
 		echo "Setzen Sie den Imagenamen(Standart:$workingpath$imagename)"
@@ -74,10 +123,6 @@ while [ "$imagepath" == "" ]
 		fi
 
 done
-
-#Nutzer definieren
-echo "Geben Sie den Nutzer an, von welchem der SSH-Key kopiert werden soll:"
-read user;
 
 echo "Die Arbeitsvariablen werden gesetzt..."
 bootpath=$workingpath"boot"
@@ -121,26 +166,26 @@ echo "fdisk wird ausgefuehrt..."
 	echo ""		#and then press ENTER twice to accept the default first and last sector.
 	echo ""
 	echo "w"	#Write the partition table and exit by typing w.
-)| fdisk $ofi
+)| fdisk "$ofi"
 
 #Bootpartion formatieren und mounten
 echo "Generiere und mounte boot-Partition..."
-mkfs.vfat $ofiboot
-mkdir $bootpath
-mount $ofiboot $bootpath
+mkfs.vfat "$ofiboot"
+mkdir "$bootpath"
+mount "$ofiboot" "$bootpath"
 
 #Rootpartition formatieren und mounten
 echo "Generiere und mounte root-Partition..."
-mkfs.ext4 $ofiroot
-mkdir $rootpath
-mount $ofiroot $rootpath
+mkfs.ext4 "$ofiroot"
+mkdir "$rootpath"
+mount "$ofiroot" "$rootpath"
 
 echo "Die Root-Dateien werden auf die SD-Karte aufgespielt..."
-bsdtar -xpf $imagepath -C $rootpath
+bsdtar -xpf "$imagepath" -C "$rootpath"
 sync
 
 echo "Die Boot-Dateien werden auf die SD-Karte aufgespielt..."
-mv -v $rootpath"/boot/"* $bootpath
+mv -v $rootpath"/boot/"* "$bootpath"
 
 if [ "$user" != "" ] && [ -f "$ssh_key_source" ]
 	then
@@ -154,6 +199,6 @@ if [ "$user" != "" ] && [ -f "$ssh_key_source" ]
 fi
 
 echo "Script rauemt das Verzeichnis auf..."
-umount $rootpath $bootpath
-rm -r $rootpath
-rm -r $bootpath
+umount "$rootpath" "$bootpath"
+rm -r "$rootpath"
+rm -r "$bootpath"
