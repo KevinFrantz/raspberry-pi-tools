@@ -196,7 +196,7 @@ case "$os" in
     	echo ""		#and then press ENTER twice to accept the default first and last sector.
     	echo ""
     	echo "w"	#Write the partition table and exit by typing w.
-    )| fdisk "$sd_card_path" || error "Creating partitions failed."
+    )| fdisk "$sd_card_path" || error "Creating partitions failed. Try \"sudo dd if=/dev/zero of=$sd_card_path bs=1M\""
 
     echo "Format boot partition..."
     mkfs.vfat "$boot_partition_path" || error "Format boot is not possible."
@@ -215,13 +215,13 @@ case "$os" in
 
     ;;
   "moode")
-    unzip -p "$image_path" | sudo dd of="$sd_card_path" bs=4M conv=fsync || error "DD to $sd_card_path failed."
+    unzip -p "$image_path" | sudo dd of="$sd_card_path" bs=1M conv=fsync || error "DD to $sd_card_path failed."
     sync
 
     mount_partitions;
     ;;
   "retropie")
-    gunzip -c "$image_path" | sudo dd of="$sd_card_path" bs=4M conv=fsync
+    gunzip -c "$image_path" | sudo dd of="$sd_card_path" bs=1M conv=fsync
     sync
 
     mount_partitions;
