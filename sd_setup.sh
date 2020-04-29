@@ -112,7 +112,7 @@ esac
 
 echo "Download os-image..."
 download_url="$base_download_url$imagename"
-image_path="$image_folder$image_path"
+image_path="$image_folder$imagename"
 
 if [ ! -f "$image_path" ]
 	then
@@ -120,7 +120,7 @@ if [ ! -f "$image_path" ]
 		if [ ! -f "$image_path" ]
 			then
 				echo "Image \"$imagename\" gets downloaded from \"$download_url\"..."
-				wget "$download_url" -P "$image_folder"
+				wget "$download_url" -P "$image_folder" || (echo "Download failed. Program aborted." && exit 1)
 		fi
 fi
 
