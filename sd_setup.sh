@@ -24,6 +24,8 @@ fi
 echo "Please type in a valid username from which the SSH-Key should be copied:"
 read -r username;
 image_folder="/home/$username/Images/";
+ssh_key_source="/home/$username/.ssh/id_rsa.pub"
+
 echo "The images will be stored in \"$image_folder\"."
 if [ ! -d "$DIR" ]; then
   echo "Folder \"$image_folder\" doesn't exist. It will be created now."
@@ -38,7 +40,7 @@ while [ \! -b "$of_device" ]
 		echo "Please select the correct SD-Card."
 		echo "/dev/:"
 		read -r device
-		$of_device="/dev/$device"
+		of_device="/dev/$device"
 done
 echo "Which Raspberry Pi version do you want to use?"
 read -r version
@@ -96,11 +98,13 @@ case "$os" in
   ;;
 esac
 download_url="$base_download_url$imagename"
-$imagepath="$image_folder$imagename"
-if [ \! -f "$imagepath" ]
+image_path="$image_folder$image_path"
+root_mount_path="$working_folder""root"
+ssh_key_target="$root_mount_path/home/$os_username/.ssh/authorized_keys"
+if [ \! -f "$image_path" ]
 	then
-		echo "The selected image \"$imagename\" doesn't exist under local path \"$imagepath\"."
-		if [ \! -f "$imagepath" ]
+		echo "The selected image \"$imagename\" doesn't exist under local path \"$image_path\"."
+		if [ \! -f "$image_path" ]
 			then
 				echo "Image \"$imagename\" gets downloaded from \"$download_url\""
 				wget "$download_url"
@@ -108,11 +112,7 @@ if [ \! -f "$imagepath" ]
 fi
 case "$os" in
   "arch")
-    bootpath="$workingpath""boot"
-    rootpath="$workingpath""root"
-    ssh_key_source="/home/$username/.ssh/id_rsa.pub"
-    ssh_key_target="$rootpath/home/$username/.ssh/authorized_keys"
-
+    boot_path="$workingpath""boot"
     if [ "${of_device:5:1}" != "s" ]
     	then
     		partion="p"
@@ -142,39 +142,39 @@ case "$os" in
     #Bootpartion formatieren und mounten
     echo "Generate and mount boot-partition..."
     mkfs.vfat "$ofiboot"
-    mkdir -v "$bootpath"
-    mount "$ofiboot" "$bootpath"
+    mkdir -v "$boot_path"
+    mount "$ofiboot" "$boot_path"
 
     #Rootpartition formatieren und mounten
     echo "Generate and mount root-partition..."
     mkfs.ext4 "$ofiroot"
-    mkdir -v "$rootpath"
-    mount "$ofiroot" "$rootpath"
+    mkdir -v "$root_path"
+    mount "$ofiroot" "$root_path"
 
     echo "Die Root-Dateien werden auf die SD-Karte aufgespielt..."
-    bsdtar -xpf "$imagepath" -C "$rootpath"
+    bsdtar -xpf "$image_path" -C "$root_path"
     sync
 
     echo "Die Boot-Dateien werden auf die SD-Karte aufgespielt..."
-    mv -v "$rootpath/boot/"* "$bootpath"
+    mv -v "$root_path/boot/"* "$boot_path"
 
     if [ "$username" != "" ] && [ -f "$ssh_key_source" ]
     	then
     		echo "SSH key will be copied to Raspberry Pi.."
-    		mkdir -v "$rootpath/home/$os_username/.ssh"
+    		mkdir -v "$root_path/home/$os_username/.ssh"
     		cat "$ssh_key_source" > "$ssh_key_target"
-    		chown -R 1000 "$rootpath/home/$os_username/.ssh"
-    		chmod -R 400 "$rootpath/home/$os_username/.ssh"
+    		chown -R 1000 "$root_path/home/$os_username/.ssh"
+    		chmod -R 400 "$root_path/home/$os_username/.ssh"
     fi
 
     echo "Unmount partitions..."
-    umount -v "$rootpath" "$bootpath"
+    umount -v "$root_path" "$boot_path"
     ;;
   "moode")
-    unzip -p "$imagepath" | sudo dd of="$of_device" bs=4M conv=fsync
+    unzip -p "$image_path" | sudo dd of="$of_device" bs=4M conv=fsync
     ;;
   "retropie")
-    gunzip -c "$imagepath" | sudo dd of="$of_device" bs=4M conv=fsync
+    gunzip -c "$image_path" | sudo dd of="$of_device" bs=4M conv=fsync
     ;;
   *)
     echo "The operation system \"$os\" is not supported yet!" && exit 1;
