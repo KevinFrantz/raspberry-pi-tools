@@ -13,8 +13,21 @@ echo "Define variables..."
 working_folder="/tmp/raspberry-pi-tools-$(date +%s)/";
 
 echo "Define functions..."
+
+warning(){
+  echo "WARNING: $1";
+}
+
+destructor(){
+  echo "Cleaning up..."
+  umount -v "$root_mount_path" "$boot_mount_path" || warning "Umounting $root_mount_path and/or $boot_mount_path failed!"
+  rm -vr "$working_folder" || warning "Removing $working_folder failed!"
+}
+
 error(){
-  echo "ERROR: $1. Leaving program." && exit 1;
+  echo "ERROR: $1 Leaving program."
+  destructor
+  exit 1;
 }
 
 echo "Create temporary working folder in $working_folder";
@@ -137,7 +150,7 @@ if [[ -v image_checksum ]]
   then
     echo "$image_checksum $image_path"| md5sum -c -|| error "Verification failed."
   else
-    echo "WARNING: Verification is not possible. No checksum is define."
+    warning "Verification is not possible. No checksum is define."
 fi
 
 echo "Preparing mount paths..."
@@ -225,7 +238,7 @@ target_user_home_folder_path="$target_home_path$target_username/";
 
 echo "Copy ssh key to target..."
 target_user_ssh_folder_path="$target_user_home_folder_path"".ssh/"
-target_authorized_keys="$target_user_ssh_folder_path/authorized_keys"
+target_authorized_keys="$target_user_ssh_folder_path""authorized_keys"
 origin_user_rsa_pub="$origin_user_home/.ssh/id_rsa.pub";
 if [ -f "$origin_user_rsa_pub" ]
   then
@@ -240,10 +253,10 @@ if [ -f "$origin_user_rsa_pub" ]
 fi
 
 echo "Change password of user \"$target_username\"..."
-chroot "$root_mount_path" /bin/passwd "$target_username"
+(chroot "$root_mount_path" /bin/passwd "$target_username") || error "Password change for \"$target_username\" wasn't possible."
 
 echo "Change password of root user..."
-chroot "$root_mount_path" /bin/passwd root
+(chroot "$root_mount_path" /bin/passwd root) || error "Password change for \"root\" wasn't possible."
 
 echo "Do you want to copy all Wifi passwords to the sd-card?(y/n)"
 read -r copy_wifi
@@ -256,7 +269,5 @@ fi
 echo "The first level folder structure on $root_mount_path is now:" && tree -laL 1 "$root_mount_path"
 echo "The first level folder structure on $boot_mount_path is now:" && tree -laL 1 "$boot_mount_path"
 
-echo "Cleaning up..."
-umount -v "$root_mount_path" "$boot_mount_path" || error "Umounting $root_mount_path and/or $boot_mount_path failed!."
-rm -vr "$working_folder"
+destructor
 echo "Setup successfull :)" && exit 0
