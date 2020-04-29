@@ -2,13 +2,14 @@
 This repository contains some shell scripts to install Arch Linux for the Raspberry Pi on a SD-Card and to backup a SD-Card.
 
 ## Setup
-### Guided
+### SD-Card
+#### Guided
 To install a Linux distribution manually on a SD card type in:
 
 ```bash
   bash ./sd_setup.sh
 ```
-### Piped
+#### Piped
 To pase the configuration to the program use this syntax:
 ```bash
 (
@@ -20,6 +21,18 @@ To pase the configuration to the program use this syntax:
   echo "root_password"  #The root password
   echo "y"              #Copy wifi configurations to target system
 )| sudo bash ./sd_setup.sh
+```
+
+### System
+#### Arch
+```bash
+  pacman-key --init
+  pacman-key --populate archlinuxarm
+```
+#### Ubuntu\\Debian
+```bash
+  sudo apt update
+  sudo apt upgrade
 ```
 ## Backup
 To backup a SD card type in:

@@ -247,7 +247,8 @@ if [ -f "$origin_user_rsa_pub" ]
     target_authorized_keys_content=$(cat "$target_authorized_keys")
     echo "$target_authorized_keys contains the following: $target_authorized_keys_content"
     chown -vR 1000 "$target_user_ssh_folder_path"
-    chmod -vR 400 "$target_user_ssh_folder_path"
+    chmod -v 700 "$target_user_ssh_folder_path"
+    chmod -v 600 "$target_authorized_keys"
   else
     echo "The ssh key \"$origin_user_rsa_pub\" can't be copied to \"$target_authorized_keys\" because it doesn't exist."
 fi
