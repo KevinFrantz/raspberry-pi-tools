@@ -83,6 +83,7 @@ case "$os" in
     esac
     ;;
   "moode")
+    image_checksum="185cbc9a4994534bb7a4bc2744c78197"
     base_download_url="https://github.com/moode-player/moode/releases/download/r651prod/"
     imagename="moode-r651-iso.zip";
     ;;
@@ -90,14 +91,17 @@ case "$os" in
     base_download_url="https://github.com/RetroPie/RetroPie-Setup/releases/download/4.6/";
     case "$version" in
       "1")
+        image_checksum="98b4205ad0248d378c6776e20c54e487"
         imagename="retropie-buster-4.6-rpi1_zero.img.gz"
         ;;
 
       "2" | "3")
+        image_checksum="2e082ef5fc2d7cf7d910494cf0f7185b"
         imagename="retropie-buster-4.6-rpi2_rpi3.img.gz"
         ;;
 
       "4")
+        image_checksum="9154d998cba5219ddf23de46d8845f6c"
         imagename="retropie-buster-4.6-rpi4.img.gz"
         ;;
       *)
@@ -124,6 +128,14 @@ if [ ! -f "$image_path" ]
 		fi
 fi
 
+echo "Verifying image..."
+if [[ -v image_checksum ]]
+  then
+    echo "$image_checksum $image_path"| md5sum -c -|| (echo "Verification failed. Program aborted." && exit 1)
+  else
+    echo "WARNING: Verification is not possible. No checksum is define."
+fi
+exit
 echo "Preparing mount paths..."
 boot_mount_path="$working_folder""boot"
 root_mount_path="$working_folder""root"
