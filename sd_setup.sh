@@ -10,7 +10,7 @@ echo
 echo "Starting setup..."
 
 echo "Define working folder..."
-working_folder="/tmp/raspberry-pi-tools-$(date +%s)"; #Working folder
+working_folder="/tmp/raspberry-pi-tools-$(date +%s)";
 
 
 echo "Create temporary working folder in $working_folder";
@@ -24,10 +24,10 @@ fi
 echo "Configure user..."
 echo "Please type in a valid username from which the SSH-Key should be copied:"
 read -r origin_username;
-getent passwd "$origin_username" > /dev/null 2 && echo "User $origin_username doesn't exist. Abord program." && exit 1;
+getent passwd "$origin_username" > /dev/null 2 || echo "User $origin_username doesn't exist. Abord program." && exit 1;
 origin_user_home="/home/$origin_username/";
 
-# Create image folders
+echo "Image routine starts..."
 image_folder="$origin_user_home/Images/";
 echo "The images will be stored in \"$image_folder\"."
 if [ ! -d "$DIR" ]; then
