@@ -175,6 +175,16 @@ mount_partitions(){
 echo "Should the image be transfered to $sd_card_path?(y/n)" && read -r transfer_image
 if [ "$transfer_image" = "y" ]
   then
+
+    echo "Should $sd_card_path be overwritten with zeros before copying?(y/n)" && read -r copy_zeros_to_device
+    if [ "$copy_zeros_to_device" = "y" ]
+      then
+        echo "Overwritting..."
+        dd if=/dev/zero of="$sd_card_path" bs=1M || error "Overwritting $sd_card_path failed."
+      else
+        echo "Skipping Overwritting..."
+    fi
+
     echo "Starting image transfer..."
     case "$os" in
       "arch")
@@ -194,7 +204,7 @@ if [ "$transfer_image" = "y" ]
         	echo ""		#and then press ENTER twice to accept the default first and last sector.
         	echo ""
         	echo "w"	#Write the partition table and exit by typing w.
-        )| fdisk "$sd_card_path" || error "Creating partitions failed. Try \"sudo dd if=/dev/zero of=$sd_card_path bs=1M\""
+        )| fdisk "$sd_card_path" || error "Creating partitions failed. Try to execute this script with the overwritting parameter."
 
         echo "Format boot partition..."
         mkfs.vfat "$boot_partition_path" || error "Format boot is not possible."
