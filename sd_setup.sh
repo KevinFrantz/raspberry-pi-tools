@@ -356,7 +356,7 @@ if [ "$password_1" == "$password_2" ]
 fi
 
 question "Type in the hostname:" && read -r hostname;
-echo "$hostname" > "$root_mount_path""etc/hostname" | error "Changing hostname failed."
+echo "$hostname" > "$root_mount_path""etc/hostname" || error "Changing hostname failed."
 
 # question "Do you want to copy all Wifi passwords to the device?(y/n)" && read -r copy_wifi
 # if [ "$copy_wifi" = "y" ]
