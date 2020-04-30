@@ -146,7 +146,7 @@ if [[ -v image_checksum ]]
   then
     echo "$image_checksum $image_path"| md5sum -c -|| error "Verification failed. Delete image via \"rm $image_path\"."
   else
-    warning "Verification is not possible. No checksum is define."
+    warning "Verification is not possible. No checksum is defined."
 fi
 
 echo "Preparing mount paths..."
