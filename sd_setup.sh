@@ -43,7 +43,10 @@ destructor(){
 
 error(){
   message "${red_color}" "ERROR" "$1 -> Leaving program."
-  destructor
+  if [ "$2" != "no_destructor" ]
+    then
+      destructor
+  fi
   exit 1;
 }
 
@@ -191,8 +194,8 @@ if [[ -v image_checksum ]]
 fi
 
 info "Preparing mount paths..."
-boot_mount_path="$working_folder""boot"
-root_mount_path="$working_folder""root"
+boot_mount_path="$working_folder""boot/"
+root_mount_path="$working_folder""root/"
 mkdir -v "$boot_mount_path"
 mkdir -v "$root_mount_path"
 
@@ -308,6 +311,13 @@ if [ -f "$origin_user_rsa_pub" ]
   else
     warning "The ssh key \"$origin_user_rsa_pub\" can't be copied to \"$target_authorized_keys\" because it doesn't exist."
 fi
+
+info "Start chroot procedures..."
+info "Mount chroot environments..."
+mount --bind /dev "$root_mount_path""dev/" || error "Mounting /dev failed." "no_destructor"
+mount --bind /sys "$root_mount_path""sys/" || error "Mounting /sys failed." "no_destructor"
+mount --bind /proc "$root_mount_path""proc/" || error "Mounting /proc failed." "no_destructor"
+mount --bind /dev/pts "$root_mount_path""dev/pts" || error "Mounting /dev/pts failed." "no_destructor"
 
 info "Change password of user \"$target_username\"..."
 (chroot "$root_mount_path" /bin/passwd "$target_username") || error "Password change for \"$target_username\" wasn't possible."
