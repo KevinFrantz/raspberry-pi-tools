@@ -26,7 +26,7 @@ destructor(){
 }
 
 error(){
-  echo "ERROR: $1 Leaving program."
+  echo "ERROR: $1 -> Leaving program."
   destructor
   exit 1;
 }
@@ -144,7 +144,7 @@ fi
 echo "Verifying image..."
 if [[ -v image_checksum ]]
   then
-    echo "$image_checksum $image_path"| md5sum -c -|| error "Verification failed."
+    echo "$image_checksum $image_path"| md5sum -c -|| error "Verification failed. Delete image via \"rm $image_path\"."
   else
     warning "Verification is not possible. No checksum is define."
 fi
