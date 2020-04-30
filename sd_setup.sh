@@ -131,13 +131,13 @@ echo "Generating os-image..."
 download_url="$base_download_url$imagename"
 image_path="$image_folder$imagename"
 
-echo "Should the image download be forced?(y/n)" && read force_image_download
-if [ $force_image_download = "y" ]
+echo "Should the image download be forced?(y/n)" && read -r force_image_download
+if [ "$force_image_download" = "y" ]
   then
     if [ -f "$image_path" ]
       then
         echo "Removing image $image_path."
-        rm $image_path || error "Removing image \"$image_path\" failed."
+        rm "$image_path" || error "Removing image \"$image_path\" failed."
       else
         echo "Forcing download wasn't neccessary. File $image_path doesn't exist."
     fi
