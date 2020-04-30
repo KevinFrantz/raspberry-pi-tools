@@ -27,8 +27,8 @@ To pase the configuration to the program use this syntax:
   #echo "n"                 # ├── Overwrite device before copying
   echo "test12345"          # | The user password
   echo "test12345"          # | The root password
-  echo "example-host"       # | The hostname 
-  echo "y"                  # | Copy wifi configurations to target system
+  echo "example-host"       # | The hostname
+  echo "y"                  # | Setup Wifi on target system
 )| sudo bash ./sd_setup.sh
 ```
 
