@@ -2,10 +2,9 @@
 This repository contains some shell scripts to install Arch Linux for the Raspberry Pi on a SD-Card and to backup a SD-Card.
 ## Todo
 
-- Implement hostname setting
 - Implement ssh configuration
 - Implement wifi automation
-- Hostname
+
 ## Setup
 ### SD-Card
 #### Guided
