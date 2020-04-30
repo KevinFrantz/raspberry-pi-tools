@@ -8,12 +8,12 @@ echo "@since 2017-03-12"
 echo
 
 # Define colors
-red_color=`tput setaf 1`
-green_color=`tput setaf 2`
-yellow_color=`tput setaf 3`
-blue_color=`tput setaf 4`
-magenta_color=`tput setaf 5`
-reset_color=`tput sgr0`
+red_color=$(tput setaf 1)
+green_color=$(tput setaf 2)
+yellow_color=$(tput setaf 3)
+blue_color=$(tput setaf 4)
+magenta_color=$(tput setaf 5)
+reset_color=$(tput sgr0)
 
 message(){
   echo "$1[$2]:${reset_color} $3 ";
