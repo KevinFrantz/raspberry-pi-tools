@@ -1,21 +1,18 @@
 #!/bin/bash
 # shellcheck disable=SC2010  # ls  | grep allowed
 
-echo "Setupscript for Raspberry Pi SD's"
+echo "Setupscript for Raspberry Pi devices"
 echo
 echo "@author Kevin Veen-Birkenbach [kevin@veen.world]"
 echo "@since 2017-03-12"
 echo
 
-echo "Starting setup..."
-
-echo "Define variables..."
-working_folder="/tmp/raspberry-pi-tools-$(date +%s)/";
-
-echo "Define functions..."
+info(){
+  echo "[INFO]: $1";
+}
 
 warning(){
-  echo "WARNING: $1";
+  echo "[WARNING]: $1";
 }
 
 destructor(){
@@ -25,29 +22,36 @@ destructor(){
 }
 
 error(){
-  echo "ERROR: $1 -> Leaving program."
+  echo "[ERROR]: $1 -> Leaving program."
   destructor
   exit 1;
 }
 
-echo "Create temporary working folder in $working_folder";
+info "Starting setup..."
+
+info "Define variables..."
+working_folder="/tmp/raspberry-pi-tools-$(date +%s)/";
+
+info "Define functions..."
+
+info "Create temporary working folder in $working_folder";
 mkdir -v "$working_folder"
 
-echo "Checking if root..."
+info "Checking if root..."
 if [ "$(id -u)" != "0" ];then
     error "This script must be executed as root!"
 fi
 
-echo "Configure user..."
+info "Configure user..."
 echo "Please type in a valid username from which the SSH-Key should be copied:" && read -r origin_username;
 getent passwd "$origin_username" > /dev/null 2 || error "User $origin_username doesn't exist.";
 origin_user_home="/home/$origin_username/";
 
-echo "Image routine starts..."
+info "Image routine starts..."
 image_folder="$origin_user_home""Images/";
-echo "The images will be stored in \"$image_folder\"."
+info "The images will be stored in \"$image_folder\"."
 if [ ! -d "$image_folder" ]; then
-  echo "Folder \"$image_folder\" doesn't exist. It will be created now."
+  info "Folder \"$image_folder\" doesn't exist. It will be created now."
   mkdir -v "$image_folder"
 fi
 
@@ -133,7 +137,7 @@ case "$os" in
   ;;
 esac
 
-echo "Generating os-image..."
+info "Generating os-image..."
 download_url="$base_download_url$imagename"
 image_path="$image_folder$imagename"
 
@@ -149,17 +153,17 @@ if [ "$force_image_download" = "y" ]
     fi
 fi
 
-echo "Start Download procedure..."
+info "Start Download procedure..."
 if [ -f "$image_path" ]
 	then
-    echo "Image exist local. Download skipped."
+    info "Image exist local. Download skipped."
   else
-		echo "Image \"$imagename\" doesn't exist under local path \"$image_path\"."
-    echo "Image \"$imagename\" gets downloaded from \"$download_url\"..."
+		info "Image \"$imagename\" doesn't exist under local path \"$image_path\"."
+    info "Image \"$imagename\" gets downloaded from \"$download_url\"..."
 		wget "$download_url" -P "$image_folder" || error "Download from \"$download_url\" failed."
 fi
 
-echo "Verifying image..."
+info "Verifying image..."
 if [[ -v image_checksum ]]
   then
     echo "$image_checksum $image_path"| md5sum -c -|| error "Verification failed. HINT: Force the download of the image."
@@ -167,13 +171,13 @@ if [[ -v image_checksum ]]
     warning "Verification is not possible. No checksum is defined."
 fi
 
-echo "Preparing mount paths..."
+info "Preparing mount paths..."
 boot_mount_path="$working_folder""boot"
 root_mount_path="$working_folder""root"
 mkdir -v "$boot_mount_path"
 mkdir -v "$root_mount_path"
 
-echo "Defining partition paths..."
+info "Defining partition paths..."
 if [ "${sd_card_path:5:1}" != "s" ]
   then
     partion="p"
@@ -184,10 +188,10 @@ boot_partition_path=$sd_card_path$partion"1"
 root_partition_path=$sd_card_path$partion"2"
 
 mount_partitions(){
-  echo "Mount boot and root partition..."
+  info "Mount boot and root partition..."
   mount "$boot_partition_path" "$boot_mount_path" || error "Mount from $boot_partition_path to $boot_mount_path failed..."
   mount "$root_partition_path" "$root_mount_path" || error "Mount from $root_partition_path to $root_mount_path failed..."
-  echo "The following mounts refering this setup exist:" && mount | grep "$working_folder"
+  info "The following mounts refering this setup exist:" && mount | grep "$working_folder"
 }
 
 echo "Should the image be transfered to $sd_card_path?(y/n)" && read -r transfer_image
@@ -197,16 +201,16 @@ if [ "$transfer_image" = "y" ]
     echo "Should $sd_card_path be overwritten with zeros before copying?(y/n)" && read -r copy_zeros_to_device
     if [ "$copy_zeros_to_device" = "y" ]
       then
-        echo "Overwritting..."
+        info "Overwritting..."
         dd if=/dev/zero of="$sd_card_path" bs=1M || error "Overwritting $sd_card_path failed."
       else
-        echo "Skipping Overwritting..."
+        info "Skipping Overwritting..."
     fi
 
-    echo "Starting image transfer..."
+    info "Starting image transfer..."
     case "$os" in
       "arch")
-        echo "Execute fdisk..."
+        info "Execute fdisk..."
         (	echo "o"	#Type o. This will clear out any partitions on the drive.
         	echo "p"	#Type p to list partitions. There should be no partitions left
         	echo "n"	#Type n,
@@ -224,19 +228,19 @@ if [ "$transfer_image" = "y" ]
         	echo "w"	#Write the partition table and exit by typing w.
         )| fdisk "$sd_card_path" || error "Creating partitions failed. Try to execute this script with the overwritting parameter."
 
-        echo "Format boot partition..."
+        info "Format boot partition..."
         mkfs.vfat "$boot_partition_path" || error "Format boot is not possible."
 
-        echo "Format root partition..."
+        info "Format root partition..."
         mkfs.ext4 "$root_partition_path" || error "Format root is not possible."
 
         mount_partitions;
 
-        echo "Root files will be transfered to sd-card..."
+        info "Root files will be transfered to device..."
         bsdtar -xpf "$image_path" -C "$root_mount_path"
         sync
 
-        echo "Boot files will be transfered to sd-card..."
+        info "Boot files will be transfered to device..."
         mv -v "$root_mount_path/boot/"* "$boot_mount_path"
 
         ;;
@@ -253,23 +257,23 @@ if [ "$transfer_image" = "y" ]
         ;;
     esac
   else
-    echo "Skipping image transfer..."
+    info "Skipping image transfer..."
 fi
 
-echo "Start regular mounting procedure..."
+info "Start regular mounting procedure..."
 if mount | grep -q "$boot_mount_path" && mount | grep -q "$root_mount_path"
   then
-    echo "Everything allready mounted. Skipping..."
+    info "Everything allready mounted. Skipping..."
   else
     mount_partitions
 fi
 
-echo "Define target paths..."
+info "Define target paths..."
 target_home_path="$root_mount_path/home/";
 target_username=$(ls "$target_home_path");
 target_user_home_folder_path="$target_home_path$target_username/";
 
-echo "Copy ssh key to target..."
+info "Copy ssh key to target..."
 target_user_ssh_folder_path="$target_user_home_folder_path"".ssh/"
 target_authorized_keys="$target_user_ssh_folder_path""authorized_keys"
 origin_user_rsa_pub="$origin_user_home/.ssh/id_rsa.pub";
@@ -278,18 +282,18 @@ if [ -f "$origin_user_rsa_pub" ]
     mkdir -v "$target_user_ssh_folder_path"
     cat "$origin_user_rsa_pub" > "$target_authorized_keys"
     target_authorized_keys_content=$(cat "$target_authorized_keys")
-    echo "$target_authorized_keys contains the following: $target_authorized_keys_content"
+    info "$target_authorized_keys contains the following: $target_authorized_keys_content"
     chown -vR 1000 "$target_user_ssh_folder_path"
     chmod -v 700 "$target_user_ssh_folder_path"
     chmod -v 600 "$target_authorized_keys"
   else
-    echo "The ssh key \"$origin_user_rsa_pub\" can't be copied to \"$target_authorized_keys\" because it doesn't exist."
+    warning "The ssh key \"$origin_user_rsa_pub\" can't be copied to \"$target_authorized_keys\" because it doesn't exist."
 fi
 
-echo "Change password of user \"$target_username\"..."
+info "Change password of user \"$target_username\"..."
 (chroot "$root_mount_path" /bin/passwd "$target_username") || error "Password change for \"$target_username\" wasn't possible."
 
-echo "Change password of root user..."
+info "Change password of root user..."
 (chroot "$root_mount_path" /bin/passwd root) || error "Password change for \"root\" wasn't possible."
 
 echo "Do you want to copy all Wifi passwords to the sd-card?(y/n)" && read -r copy_wifi
@@ -299,8 +303,8 @@ if [ "$copy_wifi" = "y" ]
     target_wifi_config_path="$root_mount_path$origin_wifi_config_path"
     rsync -av "$origin_wifi_config_path" "$target_wifi_config_path"
 fi
-echo "The first level folder structure on $root_mount_path is now:" && tree -laL 1 "$root_mount_path"
-echo "The first level folder structure on $boot_mount_path is now:" && tree -laL 1 "$boot_mount_path"
+info "The first level folder structure on $root_mount_path is now:" && tree -laL 1 "$root_mount_path"
+info "The first level folder structure on $boot_mount_path is now:" && tree -laL 1 "$boot_mount_path"
 
 destructor
-echo "Setup successfull :)" && exit 0
+info "Setup successfull :)" && exit 0
