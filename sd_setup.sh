@@ -36,9 +36,18 @@ success(){
 }
 
 destructor(){
-  echo "Cleaning up..."
-  umount -v "$root_mount_path" "$boot_mount_path" || warning "Umounting $root_mount_path and/or $boot_mount_path failed!"
-  rm -vr "$working_folder" || warning "Removing $working_folder failed!"
+  info "Cleaning up..."
+  #umount -v "$chroot_dev_pts_mount_path" || warning "Umounting $chroot_dev_pts_mount_path failed!"
+  umount -vR "$boot_mount_path" || warning "Umounting $boot_mount_path failed!"
+  umount -vR "$boot_mount_path" || warning "Umounting $boot_mount_path failed!"
+  #umount -v "$chroot_dev_mount_path" || warning "Umounting $chroot_dev_mount_path failed!"
+  #umount -v "$chroot_proc_mount_path" || warning "Umounting $chroot_proc_mount_path failed!"
+  #umount -v "$chroot_sys_mount_path" || warning "Umounting $chroot_sys_mount_path failed!"
+  #umount -v "$root_mount_path" || warning "Umounting $root_mount_path failed!"
+  #umount -v "$boot_mount_path" || warning "Umounting $boot_mount_path failed!"
+  rmdir -v "$root_mount_path" || warning "Removing $root_mount_path failed!"
+  rmdir -v "$boot_mount_path" || warning "Removing $boot_mount_path failed!"
+  rmdir -v "$working_folder" || warning "Removing $working_folder failed!"
 }
 
 error(){
@@ -291,14 +300,14 @@ if mount | grep -q "$boot_mount_path" && mount | grep -q "$root_mount_path"
 fi
 
 info "Define target paths..."
-target_home_path="$root_mount_path/home/";
+target_home_path="$root_mount_path""home/";
 target_username=$(ls "$target_home_path");
 target_user_home_folder_path="$target_home_path$target_username/";
 
 info "Copy ssh key to target..."
 target_user_ssh_folder_path="$target_user_home_folder_path"".ssh/"
 target_authorized_keys="$target_user_ssh_folder_path""authorized_keys"
-origin_user_rsa_pub="$origin_user_home/.ssh/id_rsa.pub";
+origin_user_rsa_pub="$origin_user_home"".ssh/id_rsa.pub";
 if [ -f "$origin_user_rsa_pub" ]
   then
     mkdir -v "$target_user_ssh_folder_path"
@@ -314,16 +323,29 @@ fi
 
 info "Start chroot procedures..."
 info "Mount chroot environments..."
-mount --bind /dev "$root_mount_path""dev/" || error "Mounting /dev failed." "no_destructor"
-mount --bind /sys "$root_mount_path""sys/" || error "Mounting /sys failed." "no_destructor"
-mount --bind /proc "$root_mount_path""proc/" || error "Mounting /proc failed." "no_destructor"
-mount --bind /dev/pts "$root_mount_path""dev/pts" || error "Mounting /dev/pts failed." "no_destructor"
+chroot_dev_mount_path="$root_mount_path""dev/"
+chroot_sys_mount_path="$root_mount_path""sys/"
+chroot_proc_mount_path="$root_mount_path""proc/"
+#chroot_dev_pts_mount_path="$root_mount_path""dev/pts"
+mount --rbind /dev "$chroot_dev_mount_path" || error "Mounting $chroot_dev_mount_path failed."
+mount -o bind /sys "$chroot_sys_mount_path" || error "Mounting $chroot_sys_mount_path failed."
+mount mount -t /proc none "$chroot_proc_mount_path" || error "Mounting $chroot_proc_mount_path failed."
+#mount --bind /dev/pts "$chroot_dev_pts_mount_path" || error "Mounting $chroot_dev_pts_mount_path failed."
+
+sudo  /mnt/rasp-pi-rootfs/dev
+sudo  /mnt/rasp-pi-rootfs/proc
+sudo  /sys /mnt/rasp-pi-rootfs/sys
+sudo chroot /mnt/rasp-pi-rootfs
+
+mv "$root_mount_path""resolv.conf" "$root_mount_path""resolv.conf.bak" || warning "Create the resolv.conf.bak failed"
+cp /etc/resolv.conf "$root_mount_path""/etc/resolv.conf" || error "Copy resolv.conf failed."
+cp /usr/bin/qemu-arm-static "$root_mount_path""/usr/bin/" || error "Copy qemu-arm-static failed."
 
 info "Change password of user \"$target_username\"..."
-(chroot "$root_mount_path" /bin/passwd "$target_username") || error "Password change for \"$target_username\" wasn't possible."
+(chroot $root_mount_path /bin/passwd "$target_username") || error "Password change for \"$target_username\" wasn't possible."
 
 info "Change password of root user..."
-(chroot "$root_mount_path" /bin/passwd root) || error "Password change for \"root\" wasn't possible."
+(chroot $root_mount_path /bin/passwd root) || error "Password change for \"root\" wasn't possible."
 
 question "Do you want to copy all Wifi passwords to the sd-card?(y/n)" && read -r copy_wifi
 if [ "$copy_wifi" = "y" ]
@@ -332,8 +354,9 @@ if [ "$copy_wifi" = "y" ]
     target_wifi_config_path="$root_mount_path$origin_wifi_config_path"
     rsync -av "$origin_wifi_config_path" "$target_wifi_config_path"
 fi
-info "The first level folder structure on $root_mount_path is now:" && tree -laL 1 "$root_mount_path"
-info "The first level folder structure on $boot_mount_path is now:" && tree -laL 1 "$boot_mount_path"
+
+info "The first level folder structure on $root_mount_path is:" && tree -laL 1 "$root_mount_path"
+info "The first level folder structure on $boot_mount_path is:" && tree -laL 1 "$boot_mount_path"
 
 destructor
 success "Setup successfull :)" && exit 0
