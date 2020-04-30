@@ -37,14 +37,14 @@ success(){
 
 destructor(){
   info "Cleaning up..."
-  #umount -v "$chroot_dev_pts_mount_path" || warning "Umounting $chroot_dev_pts_mount_path failed!"
-  umount -vR "$boot_mount_path" || warning "Umounting $boot_mount_path failed!"
-  umount -vR "$boot_mount_path" || warning "Umounting $boot_mount_path failed!"
-  #umount -v "$chroot_dev_mount_path" || warning "Umounting $chroot_dev_mount_path failed!"
-  #umount -v "$chroot_proc_mount_path" || warning "Umounting $chroot_proc_mount_path failed!"
-  #umount -v "$chroot_sys_mount_path" || warning "Umounting $chroot_sys_mount_path failed!"
-  #umount -v "$root_mount_path" || warning "Umounting $root_mount_path failed!"
-  #umount -v "$boot_mount_path" || warning "Umounting $boot_mount_path failed!"
+  sed -i 's/^#CHROOT //g' "$root_mount_path/etc/ld.so.preload"
+  umount -v "$chroot_dev_pts_mount_path" || warning "Umounting $chroot_dev_pts_mount_path failed!"
+  umount -v "$chroot_dev_mount_path" || warning "Umounting $chroot_dev_mount_path failed!"
+  umount -v "$chroot_proc_mount_path" || warning "Umounting $chroot_proc_mount_path failed!"
+  umount -v "$chroot_sys_mount_path" || warning "Umounting $chroot_sys_mount_path failed!"
+  umount -v "$root_mount_path""/boot/" || warning "Umounting $root_mount_path/boot/ failed!"
+  umount -v "$root_mount_path" || warning "Umounting $root_mount_path failed!"
+  umount -v "$boot_mount_path" || warning "Umounting $boot_mount_path failed!"
   rmdir -v "$root_mount_path" || warning "Removing $root_mount_path failed!"
   rmdir -v "$boot_mount_path" || warning "Removing $boot_mount_path failed!"
   rmdir -v "$working_folder" || warning "Removing $working_folder failed!"
@@ -323,31 +323,39 @@ fi
 
 info "Start chroot procedures..."
 info "Mount chroot environments..."
-chroot_dev_mount_path="$root_mount_path""dev/"
 chroot_sys_mount_path="$root_mount_path""sys/"
 chroot_proc_mount_path="$root_mount_path""proc/"
-#chroot_dev_pts_mount_path="$root_mount_path""dev/pts"
-mount --rbind /dev "$chroot_dev_mount_path" || error "Mounting $chroot_dev_mount_path failed."
-mount -o bind /sys "$chroot_sys_mount_path" || error "Mounting $chroot_sys_mount_path failed."
-mount mount -t /proc none "$chroot_proc_mount_path" || error "Mounting $chroot_proc_mount_path failed."
-#mount --bind /dev/pts "$chroot_dev_pts_mount_path" || error "Mounting $chroot_dev_pts_mount_path failed."
+chroot_dev_mount_path="$root_mount_path""dev/"
+chroot_dev_pts_mount_path="$root_mount_path""dev/pts"
+mount --bind "$boot_mount_path" "$root_mount_path""/boot" || error "Mounting $chroot_dev_mount_path failed."
+mount --bind /dev "$chroot_dev_mount_path" || error "Mounting $chroot_dev_mount_path failed."
+mount --bind /sys "$chroot_sys_mount_path" || error "Mounting $chroot_sys_mount_path failed."
+mount --bind /proc "$chroot_proc_mount_path" || error "Mounting $chroot_proc_mount_path failed."
+mount --bind /dev/pts "$chroot_dev_pts_mount_path" || error "Mounting $chroot_dev_pts_mount_path failed."
 
-sudo  /mnt/rasp-pi-rootfs/dev
-sudo  /mnt/rasp-pi-rootfs/proc
-sudo  /sys /mnt/rasp-pi-rootfs/sys
-sudo chroot /mnt/rasp-pi-rootfs
+sed -i 's/^/#CHROOT /g' /mnt/raspbian/etc/ld.so.preload
+cp -v /usr/bin/qemu-arm-static "$root_mount_path""/usr/bin/" || error "Copy qemu-arm-static failed. The following packages are neccessary: qemu qemu-user-static binfmt-support."
 
-mv "$root_mount_path""resolv.conf" "$root_mount_path""resolv.conf.bak" || warning "Create the resolv.conf.bak failed"
-cp /etc/resolv.conf "$root_mount_path""/etc/resolv.conf" || error "Copy resolv.conf failed."
-cp /usr/bin/qemu-arm-static "$root_mount_path""/usr/bin/" || error "Copy qemu-arm-static failed."
+info "Changing passwords on target system..."
+question "Type in new password: " && read -r password_1
+question "Repeat new password\"$target_username\"" && read -r password_2
+if [ "$password_1" == "$password_2" ]
+  then
+    (
+    echo "(
+          echo '$password_1'
+          echo '$password_1'
+          ) | passwd $target_username"
+    echo "(
+          echo '$password_1'
+          echo '$password_1'
+          ) | passwd"
+    ) | chroot "$root_mount_path" /bin/bash || error "Password change failed."
+  else
+    error "Passwords didn't match."
+fi
 
-info "Change password of user \"$target_username\"..."
-(chroot $root_mount_path /bin/passwd "$target_username") || error "Password change for \"$target_username\" wasn't possible."
-
-info "Change password of root user..."
-(chroot $root_mount_path /bin/passwd root) || error "Password change for \"root\" wasn't possible."
-
-question "Do you want to copy all Wifi passwords to the sd-card?(y/n)" && read -r copy_wifi
+question "Do you want to copy all Wifi passwords to the device?(y/n)" && read -r copy_wifi
 if [ "$copy_wifi" = "y" ]
   then
     origin_wifi_config_path="/etc/NetworkManager/system-connections/"
