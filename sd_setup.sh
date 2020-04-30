@@ -40,8 +40,7 @@ if [ "$(id -u)" != "0" ];then
 fi
 
 echo "Configure user..."
-echo "Please type in a valid username from which the SSH-Key should be copied:"
-read -r origin_username;
+echo "Please type in a valid username from which the SSH-Key should be copied:" && read -r origin_username;
 getent passwd "$origin_username" > /dev/null 2 || error "User $origin_username doesn't exist.";
 origin_user_home="/home/$origin_username/";
 
@@ -60,13 +59,11 @@ echo
 while [ ! -b "$sd_card_path" ]
 	do
 		echo "Please type in the name of the correct sd-card."
-		echo "/dev/:"
-		read -r device
+		echo "/dev/:" && read -r device
 		sd_card_path="/dev/$device"
 done
 
-echo "Select which Raspberry Pi version should be used"
-read -r version
+echo "Select which Raspberry Pi version should be used:" && read -r version
 
 echo "Select which operation system should be used..."
 echo
@@ -74,9 +71,7 @@ echo "1) arch"
 echo "2) moode"
 echo "3) retropie"
 echo
-echo "Please type in the os:"
-read -r os
-
+echo "Please type in the os:" && read -r os
 
 os_does_not_support_raspberry_version_error () {
   error "$os for Raspberry Pi Version $version is not supported!";
@@ -177,8 +172,7 @@ mount_partitions(){
   echo "The following mounts refering this setup exist:" && mount | grep "$working_folder"
 }
 
-echo "Should the image be transfered to $sd_card_path?(y/n)"
-read -r transfer_image
+echo "Should the image be transfered to $sd_card_path?(y/n)" && read -r transfer_image
 if [ "$transfer_image" = "y" ]
   then
     echo "Starting image transfer..."
@@ -270,8 +264,7 @@ echo "Change password of user \"$target_username\"..."
 echo "Change password of root user..."
 (chroot "$root_mount_path" /bin/passwd root) || error "Password change for \"root\" wasn't possible."
 
-echo "Do you want to copy all Wifi passwords to the sd-card?(y/n)"
-read -r copy_wifi
+echo "Do you want to copy all Wifi passwords to the sd-card?(y/n)" && read -r copy_wifi
 if [ "$copy_wifi" = "y" ]
   then
     origin_wifi_config_path="/etc/NetworkManager/system-connections/"
