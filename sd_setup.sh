@@ -127,24 +127,36 @@ case "$os" in
   ;;
 esac
 
-echo "Download os-image..."
+echo "Generating os-image..."
 download_url="$base_download_url$imagename"
 image_path="$image_folder$imagename"
 
-if [ ! -f "$image_path" ]
+echo "Should the image download be forced?(y/n)" && read force_image_download
+if [ $force_image_download = "y" ]
+  then
+    if [ -f "$image_path" ]
+      then
+        echo "Removing image $image_path."
+        rm $image_path || error "Removing image \"$image_path\" failed."
+      else
+        echo "Forcing download wasn't neccessary. File $image_path doesn't exist."
+    fi
+fi
+
+echo "Start Download procedure..."
+if [ -f "$image_path" ]
 	then
-		echo "The selected image \"$imagename\" doesn't exist under local path \"$image_path\"."
-		if [ ! -f "$image_path" ]
-			then
-				echo "Image \"$imagename\" gets downloaded from \"$download_url\"..."
-				wget "$download_url" -P "$image_folder" || error "Download failed."
-		fi
+    echo "Image exist local. Download skipped."
+  else
+		echo "Image \"$imagename\" doesn't exist under local path \"$image_path\"."
+    echo "Image \"$imagename\" gets downloaded from \"$download_url\"..."
+		wget "$download_url" -P "$image_folder" || error "Download from \"$download_url\" failed."
 fi
 
 echo "Verifying image..."
 if [[ -v image_checksum ]]
   then
-    echo "$image_checksum $image_path"| md5sum -c -|| error "Verification failed. Delete image via \"rm $image_path\"."
+    echo "$image_checksum $image_path"| md5sum -c -|| error "Verification failed. HINT: Force the download of the image."
   else
     warning "Verification is not possible. No checksum is defined."
 fi
@@ -223,7 +235,7 @@ if [ "$transfer_image" = "y" ]
 
         ;;
       "moode")
-        unzip -p "$image_path" | sudo dd of="$sd_card_path" bs=1M conv=fsync || error "DD to $sd_card_path failed."
+        unzip -p "$image_path" | sudo dd of="$sd_card_path" bs=1M conv=fsync || error "DD $image_path to $sd_card_path failed."
         sync
         ;;
       "retropie")

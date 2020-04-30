@@ -23,6 +23,7 @@ To pase the configuration to the program use this syntax:
   echo "mmcblk1"          # | The device
   echo "3"                # | The raspberry pi number
   echo "arch"             # | The operation system
+  echo "n"                # | Force image download
   echo "y"                # | Transfer image
   echo "n"                # ├── Overwrite device before copying
   echo "user_password"    # | The user password
