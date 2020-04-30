@@ -1,6 +1,5 @@
 #!/bin/bash
 # shellcheck disable=SC2010  # ls  | grep allowed
-# shellcheck disable=SC2143  # Suppress wrong grep -q warning
 
 echo "Setupscript for Raspberry Pi SD's"
 echo
@@ -56,12 +55,19 @@ echo "Select sd-card..."
 echo "List of actual mounted devices:"
 ls -lasi /dev/ | grep -E "sd|mm"
 echo
-while [ ! -b "$sd_card_path" ]
-	do
-		echo "Please type in the name of the correct sd-card."
-		echo "/dev/:" && read -r device
-		sd_card_path="/dev/$device"
-done
+echo "Please type in the name of the correct sd-card."
+echo "/dev/:" && read -r device
+sd_card_path="/dev/$device"
+
+if [ ! -b "$sd_card_path" ]
+  then
+    error "$sd_card_path is not valid device."
+fi
+
+if mount | grep -q "$sd_card_path"
+  then
+    error "Device $sd_card_path is allready mounted. Umount with \"umount $sd_card_path*\"."
+fi
 
 echo "Select which Raspberry Pi version should be used:" && read -r version
 
@@ -251,7 +257,7 @@ if [ "$transfer_image" = "y" ]
 fi
 
 echo "Start regular mounting procedure..."
-if [ "$(mount | grep -q "$boot_mount_path")" ] && [ "$(mount | grep -q "$root_mount_path")" ]
+if mount | grep -q "$boot_mount_path" && mount | grep -q "$root_mount_path"
   then
     echo "Everything allready mounted. Skipping..."
   else
