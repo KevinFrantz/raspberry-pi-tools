@@ -7,6 +7,10 @@ echo "@author Kevin Veen-Birkenbach [kevin@veen.world]"
 echo "@since 2017-03-12"
 echo
 
+question(){
+  echo "[QUESTION]: $1";
+}
+
 info(){
   echo "[INFO]: $1";
 }
@@ -43,7 +47,7 @@ if [ "$(id -u)" != "0" ];then
 fi
 
 info "Configure user..."
-echo "Please type in a valid username from which the SSH-Key should be copied:" && read -r origin_username;
+question "Please type in a valid username from which the SSH-Key should be copied:" && read -r origin_username;
 getent passwd "$origin_username" > /dev/null 2 || error "User $origin_username doesn't exist.";
 origin_user_home="/home/$origin_username/";
 
@@ -55,12 +59,10 @@ if [ ! -d "$image_folder" ]; then
   mkdir -v "$image_folder"
 fi
 
-echo "Select sd-card..."
-echo "List of actual mounted devices:"
+info "Selecting sd-card..."
+info "Show available devices..."
 ls -lasi /dev/ | grep -E "sd|mm"
-echo
-echo "Please type in the name of the correct sd-card."
-echo "/dev/:" && read -r device
+question "Please type in the name of the correct device: /dev/" && read -r device
 sd_card_path="/dev/$device"
 
 if [ ! -b "$sd_card_path" ]
@@ -73,15 +75,16 @@ if mount | grep -q "$sd_card_path"
     error "Device $sd_card_path is allready mounted. Umount with \"umount $sd_card_path*\"."
 fi
 
-echo "Select which Raspberry Pi version should be used:" && read -r version
+question "Select which Raspberry Pi version should be used:" && read -r version
 
-echo "Select which operation system should be used..."
+info "Selecting operating system should be used..."
+info "Available systems:"
 echo
 echo "1) arch"
 echo "2) moode"
 echo "3) retropie"
 echo
-echo "Please type in the os:" && read -r os
+question "Please type in the os:" && read -r os
 
 os_does_not_support_raspberry_version_error () {
   error "$os for Raspberry Pi Version $version is not supported!";
@@ -141,15 +144,15 @@ info "Generating os-image..."
 download_url="$base_download_url$imagename"
 image_path="$image_folder$imagename"
 
-echo "Should the image download be forced?(y/n)" && read -r force_image_download
+question "Should the image download be forced?(y/n)" && read -r force_image_download
 if [ "$force_image_download" = "y" ]
   then
     if [ -f "$image_path" ]
       then
-        echo "Removing image $image_path."
+        info "Removing image $image_path."
         rm "$image_path" || error "Removing image \"$image_path\" failed."
       else
-        echo "Forcing download wasn't neccessary. File $image_path doesn't exist."
+        info "Forcing download wasn't neccessary. File $image_path doesn't exist."
     fi
 fi
 
@@ -194,11 +197,11 @@ mount_partitions(){
   info "The following mounts refering this setup exist:" && mount | grep "$working_folder"
 }
 
-echo "Should the image be transfered to $sd_card_path?(y/n)" && read -r transfer_image
+question "Should the image be transfered to $sd_card_path?(y/n)" && read -r transfer_image
 if [ "$transfer_image" = "y" ]
   then
 
-    echo "Should $sd_card_path be overwritten with zeros before copying?(y/n)" && read -r copy_zeros_to_device
+    question "Should $sd_card_path be overwritten with zeros before copying?(y/n)" && read -r copy_zeros_to_device
     if [ "$copy_zeros_to_device" = "y" ]
       then
         info "Overwritting..."
@@ -296,7 +299,7 @@ info "Change password of user \"$target_username\"..."
 info "Change password of root user..."
 (chroot "$root_mount_path" /bin/passwd root) || error "Password change for \"root\" wasn't possible."
 
-echo "Do you want to copy all Wifi passwords to the sd-card?(y/n)" && read -r copy_wifi
+question "Do you want to copy all Wifi passwords to the sd-card?(y/n)" && read -r copy_wifi
 if [ "$copy_wifi" = "y" ]
   then
     origin_wifi_config_path="/etc/NetworkManager/system-connections/"
