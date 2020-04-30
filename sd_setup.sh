@@ -37,7 +37,7 @@ success(){
 
 destructor(){
   info "Cleaning up..."
-  sed -i 's/^#CHROOT //g' "$root_mount_path/etc/ld.so.preload"
+  sed -i 's/^#CHROOT //g' "$root_mount_path""etc/ld.so.preload"
   umount -v "$chroot_dev_pts_mount_path" || warning "Umounting $chroot_dev_pts_mount_path failed!"
   umount -v "$chroot_dev_mount_path" || warning "Umounting $chroot_dev_mount_path failed!"
   umount -v "$chroot_proc_mount_path" || warning "Umounting $chroot_proc_mount_path failed!"
@@ -333,7 +333,7 @@ mount --bind /sys "$chroot_sys_mount_path" || error "Mounting $chroot_sys_mount_
 mount --bind /proc "$chroot_proc_mount_path" || error "Mounting $chroot_proc_mount_path failed."
 mount --bind /dev/pts "$chroot_dev_pts_mount_path" || error "Mounting $chroot_dev_pts_mount_path failed."
 
-sed -i 's/^/#CHROOT /g' /mnt/raspbian/etc/ld.so.preload
+sed -i 's/^/#CHROOT /g' "$root_mount_path""etc/ld.so.preload"
 cp -v /usr/bin/qemu-arm-static "$root_mount_path""/usr/bin/" || error "Copy qemu-arm-static failed. The following packages are neccessary: qemu qemu-user-static binfmt-support."
 
 info "Changing passwords on target system..."
@@ -355,13 +355,16 @@ if [ "$password_1" == "$password_2" ]
     error "Passwords didn't match."
 fi
 
-question "Do you want to copy all Wifi passwords to the device?(y/n)" && read -r copy_wifi
-if [ "$copy_wifi" = "y" ]
-  then
-    origin_wifi_config_path="/etc/NetworkManager/system-connections/"
-    target_wifi_config_path="$root_mount_path$origin_wifi_config_path"
-    rsync -av "$origin_wifi_config_path" "$target_wifi_config_path"
-fi
+question "Type in the hostname:" && read -r hostname;
+echo "$hostname" > "$root_mount_path""etc/hostname" | error "Changing hostname failed."
+
+# question "Do you want to copy all Wifi passwords to the device?(y/n)" && read -r copy_wifi
+# if [ "$copy_wifi" = "y" ]
+#   then
+#     origin_wifi_config_path="/etc/NetworkManager/system-connections/"
+#     target_wifi_config_path="$root_mount_path$origin_wifi_config_path"
+#     rsync -av "$origin_wifi_config_path" "$target_wifi_config_path"
+# fi
 
 info "The first level folder structure on $root_mount_path is:" && tree -laL 1 "$root_mount_path"
 info "The first level folder structure on $boot_mount_path is:" && tree -laL 1 "$boot_mount_path"
