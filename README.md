@@ -19,13 +19,14 @@ To install a Linux distribution manually on a SD card type in:
 To pase the configuration to the program use this syntax:
 ```bash
 (
-  echo "$USER"          #The username
-  echo "mmcblk1"        #The device
-  echo "3"              #The raspberry pi number
-  echo "arch"           #The operation system
-  echo "user_password"  #The user password
-  echo "root_password"  #The root password
-  echo "y"              #Copy wifi configurations to target system
+  echo "$USER"          # The username
+  echo "mmcblk1"        # The device
+  echo "3"              # The raspberry pi number
+  echo "arch"           # The operation system
+  echo "y"              # Transfer image
+  echo "user_password"  # The user password
+  echo "root_password"  # The root password
+  echo "y"              # Copy wifi configurations to target system
 )| sudo bash ./sd_setup.sh
 ```
 

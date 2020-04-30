@@ -1,5 +1,6 @@
 #!/bin/bash
 # shellcheck disable=SC2010  # ls  | grep allowed
+# shellcheck disable=SC2143  # Suppress wrong grep -q warning
 
 echo "Setupscript for Raspberry Pi SD's"
 echo
@@ -176,60 +177,70 @@ mount_partitions(){
   echo "The following mounts refering this setup exist:" && mount | grep "$working_folder"
 }
 
-echo "Copy data to $sd_card_path..."
+echo "Should the image be transfered to $sd_card_path?(y/n)"
+read -r transfer_image
+if [ "$transfer_image" = "y" ]
+  then
+    echo "Starting image transfer..."
+    case "$os" in
+      "arch")
+        echo "Execute fdisk..."
+        (	echo "o"	#Type o. This will clear out any partitions on the drive.
+        	echo "p"	#Type p to list partitions. There should be no partitions left
+        	echo "n"	#Type n,
+        	echo "p"	#then p for primary,
+        	echo "1"	#1 for the first partition on the drive,
+        	echo ""		#press ENTER to accept the default first sector,
+        	echo "+100M"	#then type +100M for the last sector.
+        	echo "t"	#Type t,
+        	echo "c"	#then c to set the first partition to type W95 FAT32 (LBA).
+        	echo "n"	#Type n,
+        	echo "p"	#then p for primary,
+        	echo "2"	#2 for the second partition on the drive,
+        	echo ""		#and then press ENTER twice to accept the default first and last sector.
+        	echo ""
+        	echo "w"	#Write the partition table and exit by typing w.
+        )| fdisk "$sd_card_path" || error "Creating partitions failed. Try \"sudo dd if=/dev/zero of=$sd_card_path bs=1M\""
 
-case "$os" in
-  "arch")
-    echo "Execute fdisk..."
-    (	echo "o"	#Type o. This will clear out any partitions on the drive.
-    	echo "p"	#Type p to list partitions. There should be no partitions left
-    	echo "n"	#Type n,
-    	echo "p"	#then p for primary,
-    	echo "1"	#1 for the first partition on the drive,
-    	echo ""		#press ENTER to accept the default first sector,
-    	echo "+100M"	#then type +100M for the last sector.
-    	echo "t"	#Type t,
-    	echo "c"	#then c to set the first partition to type W95 FAT32 (LBA).
-    	echo "n"	#Type n,
-    	echo "p"	#then p for primary,
-    	echo "2"	#2 for the second partition on the drive,
-    	echo ""		#and then press ENTER twice to accept the default first and last sector.
-    	echo ""
-    	echo "w"	#Write the partition table and exit by typing w.
-    )| fdisk "$sd_card_path" || error "Creating partitions failed. Try \"sudo dd if=/dev/zero of=$sd_card_path bs=1M\""
+        echo "Format boot partition..."
+        mkfs.vfat "$boot_partition_path" || error "Format boot is not possible."
 
-    echo "Format boot partition..."
-    mkfs.vfat "$boot_partition_path" || error "Format boot is not possible."
+        echo "Format root partition..."
+        mkfs.ext4 "$root_partition_path" || error "Format root is not possible."
 
-    echo "Format root partition..."
-    mkfs.ext4 "$root_partition_path" || error "Format root is not possible."
+        mount_partitions;
 
-    mount_partitions;
+        echo "Root files will be transfered to sd-card..."
+        bsdtar -xpf "$image_path" -C "$root_mount_path"
+        sync
 
-    echo "Root files will be transfered to sd-card..."
-    bsdtar -xpf "$image_path" -C "$root_mount_path"
-    sync
+        echo "Boot files will be transfered to sd-card..."
+        mv -v "$root_mount_path/boot/"* "$boot_mount_path"
 
-    echo "Boot files will be transfered to sd-card..."
-    mv -v "$root_mount_path/boot/"* "$boot_mount_path"
+        ;;
+      "moode")
+        unzip -p "$image_path" | sudo dd of="$sd_card_path" bs=1M conv=fsync || error "DD to $sd_card_path failed."
+        sync
+        ;;
+      "retropie")
+        gunzip -c "$image_path" | sudo dd of="$sd_card_path" bs=1M conv=fsync
+        sync
+        ;;
+      *)
+        error "Image transfer for operation system \"$os\" is not supported yet!";
+        ;;
+    esac
+  else
+    echo "Skipping image transfer..."
+fi
 
-    ;;
-  "moode")
-    unzip -p "$image_path" | sudo dd of="$sd_card_path" bs=1M conv=fsync || error "DD to $sd_card_path failed."
-    sync
-
-    mount_partitions;
-    ;;
-  "retropie")
-    gunzip -c "$image_path" | sudo dd of="$sd_card_path" bs=1M conv=fsync
-    sync
-
-    mount_partitions;
-    ;;
-  *)
-    error "Image transfer for operation system \"$os\" is not supported yet!";
-    ;;
-esac
+echo "Start regular mounting procedure..."
+if [ "$(mount | grep -q "$boot_mount_path")" ] && [ "$(mount | grep -q "$root_mount_path")" ]
+  then
+    echo "Everything allready mounted. Skipping..."
+  else
+    mount_partitions
+fi
 
 echo "Define target paths..."
 target_home_path="$root_mount_path/home/";
