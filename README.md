@@ -1,3 +1,9 @@
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
+# DEPRECATED
+
+This repository was merged into [Core System](https://github.com/kevinveenbirkenbach/core-system).
+
 # Raspberry Pi sdc tools
 This repository contains some shell scripts to install Arch Linux for the Raspberry Pi on a SD-Card and to backup a SD-Card.
 ## Todo
